@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>From Prototype to Production — AutoGen Deployment · MSBA 6155</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --maroon:   #7A0019;
+    --maroon-d: #5a0012;
+    --maroon-l: #f5e6ea;
+    --gold:     #FFCC33;
+    --gold-d:   #c9960a;
+    --gold-l:   #fffbe6;
+    --teal:     #0F6E56;
+    --teal-l:   #e0f5ee;
+    --blue:     #185FA5;
+    --blue-l:   #e6f1fb;
+    --red:      #C62828;
+    --red-l:    #fce4ec;
+    --green:    #2E7D32;
+    --green-l:  #e8f5e9;
+    --purple:   #6A1B9A;
+    --purple-l: #f3e5f5;
+    --ink:      #1a1a1a;
+    --muted:    #5a5a5a;
+    --border:   #e0e0e0;
+    --bg:       #fafaf8;
+    --code-bg:  #1e1e2e;
+    --sidebar-w: 268px;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--ink);
+    background: var(--bg);
+    display: flex;
+  }
+
+  /* ── Sidebar ─────────────────────────────────────────────────── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-height: 100vh;
+    background: var(--maroon);
+    position: fixed;
+    top: 0; left: 0;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    overflow-y: auto;
+  }
+  .sidebar-brand {
+    padding: 22px 20px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+  }
+  .sidebar-brand .course-tag {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 4px;
+  }
+  .sidebar-brand .lab-title {
+    font-size: 13px; font-weight: 600; color: #fff; line-height: 1.35;
+  }
+  .back-link {
+    display: flex; align-items: center; gap: 7px;
+    margin: 12px 20px 0;
+    font-size: 12px; color: rgba(255,204,51,0.8);
+    text-decoration: none;
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,204,51,0.25);
+    transition: background 0.15s;
+  }
+  .back-link:hover { background: rgba(255,204,51,0.1); color: var(--gold); }
+  .sidebar-nav { padding: 10px 0 40px; flex: 1; }
+  .nav-section-label {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: rgba(255,204,51,0.7);
+    padding: 14px 20px 5px;
+  }
+  .nav-link {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 20px;
+    font-size: 13px; color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .nav-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .nav-link.active { background: rgba(255,204,51,0.15); color: var(--gold); border-left-color: var(--gold); }
+  .nav-link .step-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: rgba(255,255,255,0.9);
+  }
+  .nav-link.active .step-num { background: var(--gold); color: var(--maroon); }
+
+  /* ── Main ────────────────────────────────────────────────────── */
+  #main { margin-left: var(--sidebar-w); flex: 1; min-width: 0; }
+
+  /* ── Hero ────────────────────────────────────────────────────── */
+  .hero {
+    background: var(--maroon);
+    padding: 56px 64px 44px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; right: 60px; top: 30px;
+    font-size: 120px; opacity: 0.04; color: #fff;
+    font-family: monospace;
+    content: '{ deploy }';
+    font-size: 64px; letter-spacing: -2px;
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 6px;
+  }
+  .hero-author {
+    font-size: 13px; font-weight: 600;
+    color: rgba(255,204,51,0.85);
+    letter-spacing: 0.03em; margin-bottom: 14px;
+  }
+  .hero h1 {
+    font-size: clamp(26px, 3.5vw, 38px);
+    font-weight: 800; color: #fff;
+    line-height: 1.15; max-width: 620px; margin-bottom: 14px;
+  }
+  .hero-sub {
+    font-size: 15px; color: rgba(255,255,255,0.7);
+    max-width: 580px; margin-bottom: 28px;
+  }
+  .hero-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill {
+    padding: 4px 13px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+  }
+  .pill-gold   { background: var(--gold); color: var(--maroon); }
+  .pill-teal   { background: var(--teal); color: #fff; }
+  .pill-blue   { background: var(--blue); color: #fff; }
+  .pill-ghost  { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85); }
+  .pill-green  { background: var(--green); color: #fff; }
+
+  /* ── Section ─────────────────────────────────────────────────── */
+  .section { padding: 52px 64px; border-bottom: 1px solid var(--border); }
+  .section:last-child { border-bottom: none; }
+
+  /* ── Phase header ─────────────────────────────────────────────── */
+  .phase-header {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+  }
+  .phase-badge {
+    width: 50px; height: 50px; border-radius: 12px;
+    background: var(--maroon); color: var(--gold);
+    font-size: 20px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .phase-title { font-size: 22px; font-weight: 700; color: var(--maroon); line-height: 1.2; }
+  .phase-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Typography ──────────────────────────────────────────────── */
+  .section h2 { font-size: 18px; font-weight: 700; color: var(--maroon); margin: 32px 0 10px; }
+  .section h3 { font-size: 15px; font-weight: 700; color: var(--teal);   margin: 24px 0 8px;  }
+  .section p  { margin-bottom: 12px; color: var(--ink); max-width: 740px; }
+  .section ol, .section ul { padding-left: 22px; margin-bottom: 14px; max-width: 720px; }
+  .section li { margin-bottom: 5px; }
+  .section ol li::marker { font-weight: 700; color: var(--maroon); }
+  code { font-family: 'Cascadia Code','Fira Code','Consolas',monospace; font-size: 13px; background: #f0f0f0; padding: 1px 5px; border-radius: 3px; }
+
+  /* ── Code blocks ─────────────────────────────────────────────── */
+  .code-wrap { position: relative; margin: 14px 0 20px; }
+  .code-label {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+    background: var(--code-bg);
+    padding: 7px 14px;
+    border-radius: 10px 10px 0 0;
+    display: flex; align-items: center; gap: 7px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #28c840; }
+  pre {
+    background: var(--code-bg);
+    border-radius: 0 0 10px 10px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-family: 'Cascadia Code','Fira Code','Consolas',monospace;
+    font-size: 13px; line-height: 1.6; color: #cdd6f4;
+  }
+  pre .c  { color: #6c7086; font-style: italic; }
+  pre .k  { color: #cba6f7; }
+  pre .s  { color: #a6e3a1; }
+  pre .f  { color: #89b4fa; }
+  pre .n  { color: #fab387; }
+  .copy-btn {
+    position: absolute; top: 6px; right: 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px; color: rgba(255,255,255,0.6);
+    font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+    padding: 4px 10px; cursor: pointer;
+    transition: background 0.15s, color 0.15s; z-index: 1;
+  }
+  .copy-btn:hover { background: rgba(255,255,255,0.16); color: #fff; }
+  .copy-btn.copied { background: rgba(40,200,70,0.2); color: #28c840; border-color: #28c840; }
+
+  /* ── Shell tabs ──────────────────────────────────────────────── */
+  .shell-tabs {
+    display: flex; gap: 2px;
+    background: #16162a;
+    padding: 6px 12px 0;
+  }
+  .shell-tab {
+    padding: 5px 14px; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.04em; border: none;
+    border-radius: 5px 5px 0 0; cursor: pointer;
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.45);
+    transition: background 0.15s, color 0.15s;
+  }
+  .shell-tab.active { background: var(--code-bg); color: var(--gold); }
+  .shell-pane { display: none; position: relative; }
+  .shell-pane.active { display: block; }
+  .shell-pane pre { border-radius: 0 0 10px 10px; }
+  .shell-pane .copy-btn { top: 8px; right: 8px; }
+
+  /* ── Callouts ────────────────────────────────────────────────── */
+  .callout {
+    display: flex; border-radius: 10px;
+    overflow: hidden; margin: 18px 0 22px; max-width: 740px;
+  }
+  .callout-stripe { width: 6px; flex-shrink: 0; }
+  .callout-body   { padding: 13px 17px; flex: 1; }
+  .callout-label  { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; }
+  .callout-text   { font-size: 14px; line-height: 1.6; }
+  .callout-check .callout-stripe { background: var(--teal); }
+  .callout-check .callout-body   { background: var(--teal-l); }
+  .callout-check .callout-label  { color: var(--teal); }
+  .callout-tip   .callout-stripe { background: var(--blue); }
+  .callout-tip   .callout-body   { background: var(--blue-l); }
+  .callout-tip   .callout-label  { color: var(--blue); }
+  .callout-key   .callout-stripe { background: var(--maroon); }
+  .callout-key   .callout-body   { background: var(--maroon-l); }
+  .callout-key   .callout-label  { color: var(--maroon); }
+  .callout-warn  .callout-stripe { background: var(--gold-d); }
+  .callout-warn  .callout-body   { background: var(--gold-l); }
+  .callout-warn  .callout-label  { color: var(--gold-d); }
+  .callout-green .callout-stripe { background: var(--green); }
+  .callout-green .callout-body   { background: var(--green-l); }
+  .callout-green .callout-label  { color: var(--green); }
+
+  /* ── Pipeline diagram ────────────────────────────────────────── */
+  .pipeline {
+    display: flex; align-items: stretch;
+    gap: 0; margin: 20px 0 28px;
+    border-radius: 10px; overflow: hidden;
+    border: 1.5px solid var(--border);
+    max-width: 740px;
+  }
+  .pipe-stage {
+    flex: 1; padding: 16px 14px;
+    display: flex; flex-direction: column;
+    align-items: center; text-align: center;
+    border-right: 1px solid var(--border);
+    position: relative;
+  }
+  .pipe-stage:last-child { border-right: none; }
+  .pipe-stage::after {
+    content: '→';
+    position: absolute; right: -10px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted); font-size: 14px; z-index: 1;
+    background: var(--bg); padding: 2px 0;
+  }
+  .pipe-stage:last-child::after { display: none; }
+  .pipe-icon  { font-size: 22px; margin-bottom: 6px; }
+  .pipe-label { font-size: 11px; font-weight: 700; color: var(--maroon); letter-spacing: 0.04em; margin-bottom: 4px; }
+  .pipe-desc  { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+  /* ── Comparison table ────────────────────────────────────────── */
+  .tbl-wrap { overflow-x: auto; margin: 14px 0 22px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  thead tr { background: var(--maroon); color: #fff; }
+  thead th { padding: 10px 14px; text-align: left; font-weight: 600; font-size: 13px; }
+  tbody tr:nth-child(odd)  { background: #fff; }
+  tbody tr:nth-child(even) { background: var(--bg); }
+  tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 13px; }
+  .badge {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 4px; font-size: 11px; font-weight: 700;
+  }
+  .badge-green  { background: var(--green-l);  color: var(--green); }
+  .badge-gold   { background: var(--gold-l);   color: var(--gold-d); }
+  .badge-maroon { background: var(--maroon-l); color: var(--maroon); }
+  .badge-blue   { background: var(--blue-l);   color: var(--blue); }
+
+  /* ── Security layer diagram ──────────────────────────────────── */
+  .sec-layers { display: flex; flex-direction: column; gap: 6px; margin: 16px 0 24px; max-width: 640px; }
+  .sec-layer {
+    border-radius: 8px; padding: 12px 18px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .sec-layer-icon { font-size: 20px; flex-shrink: 0; }
+  .sec-layer-label { font-size: 13px; font-weight: 700; }
+  .sec-layer-desc  { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+
+  /* ── Progress bar ────────────────────────────────────────────── */
+  #progress-bar {
+    position: fixed; top: 0; left: var(--sidebar-w); right: 0; height: 3px;
+    background: var(--gold); transform-origin: left; transform: scaleX(0);
+    transition: transform 0.1s; z-index: 200;
+  }
+  #back-top {
+    position: fixed; bottom: 28px; right: 28px;
+    width: 40px; height: 40px; background: var(--maroon);
+    color: #fff; border: none; border-radius: 50%;
+    font-size: 18px; cursor: pointer;
+    display: none; align-items: center; justify-content: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18); z-index: 300;
+    transition: background 0.15s;
+  }
+  #back-top:hover { background: var(--maroon-d); }
+  #back-top.visible { display: flex; }
+
+  footer {
+    background: var(--maroon); color: rgba(255,255,255,0.7);
+    padding: 28px 64px; font-size: 13px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  footer strong { color: var(--gold); }
+  footer a { color: var(--gold); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 900px) {
+    #sidebar { display: none; }
+    #main { margin-left: 0; }
+    #progress-bar { left: 0; }
+    .section { padding: 36px 24px; }
+    .hero { padding: 36px 24px 28px; }
+    footer { padding: 20px 24px; flex-direction: column; gap: 8px; text-align: center; }
+    .pipeline { flex-direction: column; }
+    .pipe-stage::after { content: '↓'; right: auto; left: 50%; top: auto; bottom: -14px; transform: translateX(-50%); }
+  }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────────────── -->
+<nav id="sidebar">
+  <div class="sidebar-brand">
+    <div class="course-tag">MSBA 6155 · Generative AI in Business</div>
+    <div class="lab-title">AutoGen Studio<br>Deployment Guide</div>
+  </div>
+  <a class="back-link" href="index.html">← Back to Lab Tutorial</a>
+  <div class="sidebar-nav">
+    <div class="nav-section-label">Overview</div>
+    <a class="nav-link active" href="#overview"><span class="step-num">✦</span>Prototype → Production</a>
+    <a class="nav-link" href="#export"><span class="step-num">✦</span>The Gap to Bridge</a>
+
+    <div class="nav-section-label">Phase 1 — Export</div>
+    <a class="nav-link" href="#phase1"><span class="step-num">1</span>Export from Studio</a>
+
+    <div class="nav-section-label">Phase 2 — Harden</div>
+    <a class="nav-link" href="#phase2"><span class="step-num">2</span>Add Real Authentication</a>
+    <a class="nav-link" href="#phase3"><span class="step-num">3</span>Persistent Vector Store</a>
+    <a class="nav-link" href="#phase4"><span class="step-num">4</span>Wrap as an API</a>
+
+    <div class="nav-section-label">Phase 3 — Deploy</div>
+    <a class="nav-link" href="#phase5"><span class="step-num">5</span>Containerize with Docker</a>
+    <a class="nav-link" href="#phase6"><span class="step-num">6</span>Azure Deployment Options</a>
+    <a class="nav-link" href="#phase7"><span class="step-num">7</span>Production Checklist</a>
+  </div>
+</nav>
+
+<!-- ── Main ───────────────────────────────────────────────────────────────── -->
+<main id="main">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-eyebrow">MSBA 6155 · Add-On Module · Generative AI in Business</div>
+    <div class="hero-author">Prof. Alok Gupta · Curtis L. Carlson Chair in Information Management</div>
+    <h1>From Prototype to Production: Deploying Your AutoGen System</h1>
+    <p class="hero-sub">You've built a working multi-agent prototype in AutoGen Studio. This guide walks you through the steps to take it from a local demo to a real deployed application — with proper authentication, persistent storage, an API layer, and cloud hosting.</p>
+    <div class="hero-pills">
+      <span class="pill pill-gold">Post-lab module</span>
+      <span class="pill pill-teal">Azure Container Apps</span>
+      <span class="pill pill-blue">FastAPI</span>
+      <span class="pill pill-green">Azure AD Auth</span>
+      <span class="pill pill-ghost">Continues from Lab Tutorial</span>
+    </div>
+  </div>
+
+  <!-- Overview -->
+  <section class="section" id="overview">
+    <div class="phase-header">
+      <div class="phase-badge">✦</div>
+      <div>
+        <div class="phase-title">Prototype vs. Production — What Actually Changes</div>
+        <div class="phase-sub">Read this before diving into the phases</div>
+      </div>
+    </div>
+
+    <p>AutoGen Studio is an excellent prototyping tool — it lets you build, test, and iterate on agent systems quickly. But it is explicitly not designed for production deployment. Here is what changes when you move from the Studio prototype to a real application.</p>
+
+    <div class="pipeline">
+      <div class="pipe-stage" style="background:#fafaf8;">
+        <div class="pipe-icon">🧪</div>
+        <div class="pipe-label">Studio Prototype</div>
+        <div class="pipe-desc">Drag-and-drop, local SQLite, in-memory ChromaDB, no auth</div>
+      </div>
+      <div class="pipe-stage" style="background:#f5e6ea;">
+        <div class="pipe-icon">📤</div>
+        <div class="pipe-label">Export</div>
+        <div class="pipe-desc">Download team JSON, generate Python code</div>
+      </div>
+      <div class="pipe-stage" style="background:#e6f1fb;">
+        <div class="pipe-icon">🔒</div>
+        <div class="pipe-label">Harden</div>
+        <div class="pipe-desc">Real auth, persistent DB, API wrapper</div>
+      </div>
+      <div class="pipe-stage" style="background:#e0f5ee;">
+        <div class="pipe-icon">📦</div>
+        <div class="pipe-label">Containerize</div>
+        <div class="pipe-desc">Docker image, environment config</div>
+      </div>
+      <div class="pipe-stage" style="background:#fffbe6;">
+        <div class="pipe-icon">☁️</div>
+        <div class="pipe-label">Deploy</div>
+        <div class="pipe-desc">Azure Container Apps, monitoring, scaling</div>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Component</th><th>In the Lab Prototype</th><th>In Production</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Authentication</strong></td><td>Conversational — agent asks "are you a doctor?"</td><td>Azure AD / Entra ID — role injected from verified token</td></tr>
+          <tr><td><strong>Vector store</strong></td><td>ChromaDB in-memory — resets on restart</td><td>Azure AI Search or persistent ChromaDB server</td></tr>
+          <tr><td><strong>API layer</strong></td><td>AutoGen Studio UI only</td><td>FastAPI REST endpoint — any client can call it</td></tr>
+          <tr><td><strong>Secret management</strong></td><td>.env file on disk</td><td>Azure Key Vault — secrets never touch the filesystem</td></tr>
+          <tr><td><strong>Scaling</strong></td><td>Single process, one user at a time</td><td>Azure Container Apps — autoscales with load</td></tr>
+          <tr><td><strong>Logging & audit</strong></td><td>Terminal output only</td><td>Azure Monitor — every query, role, and response logged</td></tr>
+          <tr><td><strong>Model access</strong></td><td>API key in .env</td><td>Managed Identity — no keys stored anywhere</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-key">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">🔑 The core architectural shift</div>
+        <div class="callout-text">In the prototype, the LLM enforces access control through its system prompt. In production, access control moves <strong>upstream of the LLM</strong> — your API layer verifies the user's token, extracts their role, and passes only that role to the agent. The LLM never decides who you are. It only decides what to do with a role it has already been told.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gap section -->
+  <section class="section" id="export">
+    <div class="phase-header">
+      <div class="phase-badge">✦</div>
+      <div>
+        <div class="phase-title">The Gap to Bridge</div>
+        <div class="phase-sub">Specifically what the lab prototype is missing</div>
+      </div>
+    </div>
+
+    <p>Our medical demo has three specific gaps that must be addressed before it could be used with real patient data:</p>
+
+    <div class="sec-layers">
+      <div class="sec-layer" style="background:var(--red-l);">
+        <div class="sec-layer-icon">🚨</div>
+        <div>
+          <div class="sec-layer-label" style="color:var(--red);">Gap 1 — Conversational authentication</div>
+          <div class="sec-layer-desc">Any user can claim any role. Nothing verifies identity. A patient could type "I am a doctor" and get full access.</div>
+        </div>
+      </div>
+      <div class="sec-layer" style="background:var(--gold-l);">
+        <div class="sec-layer-icon">⚠️</div>
+        <div>
+          <div class="sec-layer-label" style="color:var(--gold-d);">Gap 2 — In-memory vector store</div>
+          <div class="sec-layer-desc">ChromaDB resets when the process restarts. All transcribed records are lost between sessions.</div>
+        </div>
+      </div>
+      <div class="sec-layer" style="background:var(--gold-l);">
+        <div class="sec-layer-icon">⚠️</div>
+        <div>
+          <div class="sec-layer-label" style="color:var(--gold-d);">Gap 3 — No API surface</div>
+          <div class="sec-layer-desc">The system only works through AutoGen Studio's UI. No other application — web front end, mobile app, EHR system — can call it.</div>
+        </div>
+      </div>
+    </div>
+
+    <p>The three phases below address each gap in order. Work through them sequentially — authentication must come before the API layer, and the API layer before deployment.</p>
+  </section>
+
+  <!-- Phase 1 — Export -->
+  <section class="section" id="phase1">
+    <div class="phase-header">
+      <div class="phase-badge">1</div>
+      <div>
+        <div class="phase-title">Export Your Team from AutoGen Studio</div>
+        <div class="phase-sub">Phase 1 — Getting the code out of the GUI</div>
+      </div>
+    </div>
+
+    <p>AutoGen Studio stores your team configuration as JSON in a local SQLite database. The Deployment tab gives you two export options — both are useful for different purposes.</p>
+
+    <h2>Option A — Export as Python code (recommended starting point)</h2>
+    <ol>
+      <li>In AutoGen Studio, click the <strong>Deployment</strong> tab in the left sidebar</li>
+      <li>Select <strong>MedicalRecordsTeam</strong> from the team dropdown</li>
+      <li>Click <strong>Export to Python</strong></li>
+      <li>Save the generated <code>team.py</code> file into your <code>medical-demo/</code> folder</li>
+    </ol>
+
+    <p>The exported file will look roughly like this — a fully runnable Python script that recreates your team programmatically:</p>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>team.py — auto-generated by AutoGen Studio</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="k">import</span> asyncio
+<span class="k">from</span> autogen_agentchat.agents <span class="k">import</span> AssistantAgent
+<span class="k">from</span> autogen_agentchat.teams <span class="k">import</span> SelectorGroupChat
+<span class="k">from</span> autogen_agentchat.conditions <span class="k">import</span> MaxMessageTermination
+<span class="k">from</span> autogen_ext.models.openai <span class="k">import</span> AzureOpenAIChatCompletionClient
+<span class="k">import</span> os
+<span class="k">from</span> dotenv <span class="k">import</span> load_dotenv
+
+<span class="f">load_dotenv</span>()
+
+model_client = <span class="f">AzureOpenAIChatCompletionClient</span>(
+    azure_deployment=os.environ[<span class="s">"AZURE_DEPLOYMENT_NAME"</span>],
+    api_version=os.environ[<span class="s">"AZURE_API_VERSION"</span>],
+    azure_endpoint=os.environ[<span class="s">"AZURE_OPENAI_ENDPOINT"</span>],
+    api_key=os.environ[<span class="s">"AZURE_OPENAI_API_KEY"</span>],
+)
+
+lab_assistant = <span class="f">AssistantAgent</span>(
+    name=<span class="s">"LabAssistantAgent"</span>,
+    model_client=model_client,
+    tools=[process_mock_files, process_audio_files],
+    system_message=<span class="s">"..."</span>
+)
+orchestrator = <span class="f">AssistantAgent</span>(name=<span class="s">"OrchestratorAgent"</span>, model_client=model_client, system_message=<span class="s">"..."</span>)
+doctor_agent  = <span class="f">AssistantAgent</span>(name=<span class="s">"DoctorAgent"</span>,      model_client=model_client, tools=[query_all_records],         system_message=<span class="s">"..."</span>)
+patient_agent = <span class="f">AssistantAgent</span>(name=<span class="s">"PatientAgent"</span>,     model_client=model_client, tools=[query_patient_records],     system_message=<span class="s">"..."</span>)
+pharma_agent  = <span class="f">AssistantAgent</span>(name=<span class="s">"PharmacistAgent"</span>,  model_client=model_client, tools=[query_prescriptions_only],  system_message=<span class="s">"..."</span>)
+
+termination = <span class="f">MaxMessageTermination</span>(max_messages=<span class="n">20</span>)
+
+team = <span class="f">SelectorGroupChat</span>(
+    participants=[lab_assistant, orchestrator, doctor_agent, patient_agent, pharma_agent],
+    model_client=model_client,
+    termination_condition=termination,
+    selector_prompt=<span class="s">"..."</span>
+)
+
+<span class="k">async def</span> <span class="f">run</span>(message: str):
+    result = <span class="k">await</span> team.<span class="f">run</span>(task=message)
+    <span class="k">return</span> result</pre>
+    </div>
+
+    <h2>Option B — Export as JSON (for configuration management)</h2>
+    <p>Click <strong>Export to JSON</strong> to get the raw team configuration. This is useful for version-controlling your agent definitions in Git without the Python boilerplate:</p>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>terminal — serve directly from JSON (quick test)</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="c"># Serve the exported team as a REST endpoint directly</span>
+autogenstudio serve --team team_config.json --port 8084</pre>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">💡 Which to use</div>
+        <div class="callout-text">Use the <strong>Python export</strong> as your starting point for production — it gives you code you can modify, version control, and integrate with FastAPI. Use the <strong>JSON export</strong> for quick tests or if you want to commit agent definitions separately from application code.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Phase 2 — Authentication -->
+  <section class="section" id="phase2">
+    <div class="phase-header">
+      <div class="phase-badge">2</div>
+      <div>
+        <div class="phase-title">Replace Conversational Auth with Real Authentication</div>
+        <div class="phase-sub">Phase 2 — The most critical change for a medical application</div>
+      </div>
+    </div>
+
+    <p>In the prototype, the OrchestratorAgent asks "are you a doctor, patient, or pharmacist?" and trusts the answer. In production, that trust must come from a verified identity token — not a chat message.</p>
+
+    <p>The good news: the agent code barely changes. The auth logic moves into your API layer (Phase 4), and the agents simply receive a pre-verified role. Here's the architecture:</p>
+
+    <div class="sec-layers">
+      <div class="sec-layer" style="background:var(--blue-l);">
+        <div class="sec-layer-icon">👤</div>
+        <div>
+          <div class="sec-layer-label" style="color:var(--blue);">User logs in via Azure AD / Entra ID</div>
+          <div class="sec-layer-desc">Single sign-on with their hospital or university Microsoft account. Roles are assigned in Azure AD groups (e.g. "Medical-Doctors", "Medical-Patients").</div>
+        </div>
+      </div>
+      <div class="sec-layer" style="background:var(--teal-l);">
+        <div class="sec-layer-icon">🔐</div>
+        <div>
+          <div class="sec-layer-label" style="color:var(--teal);">API receives a JWT bearer token</div>
+          <div class="sec-layer-desc">Every request includes an Authorization header. Your FastAPI endpoint validates the token and extracts the user's role and ID from the claims.</div>
+        </div>
+      </div>
+      <div class="sec-layer" style="background:var(--green-l);">
+        <div class="sec-layer-icon">🤖</div>
+        <div>
+          <div class="sec-layer-label" style="color:var(--green);">Role is injected into the agent context</div>
+          <div class="sec-layer-desc">The verified role and patient_id are prepended to the user's message before it reaches the OrchestratorAgent. The LLM never decides who you are.</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Install the Azure auth library</h3>
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>terminal</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>pip install azure-identity msal fastapi python-jose[cryptography] httpx</pre>
+    </div>
+
+    <h3>Token validation middleware</h3>
+    <p>Create <code>auth.py</code> in your project root:</p>
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>auth.py</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="k">from</span> fastapi <span class="k">import</span> HTTPException, Security
+<span class="k">from</span> fastapi.security <span class="k">import</span> HTTPBearer, HTTPAuthorizationCredentials
+<span class="k">from</span> jose <span class="k">import</span> jwt, JWTError
+<span class="k">import</span> httpx, os
+
+TENANT_ID  = os.environ[<span class="s">"AZURE_TENANT_ID"</span>]
+CLIENT_ID  = os.environ[<span class="s">"AZURE_CLIENT_ID"</span>]
+JWKS_URL   = <span class="s">f"https://login.microsoftonline.com/{TENANT_ID}/discovery/v2.0/keys"</span>
+
+<span class="c"># Role mapping — Azure AD group names → internal role strings</span>
+ROLE_MAP = {
+    <span class="s">"Medical-Doctors"</span>:    <span class="s">"doctor"</span>,
+    <span class="s">"Medical-Patients"</span>:   <span class="s">"patient"</span>,
+    <span class="s">"Medical-Pharmacists"</span>: <span class="s">"pharmacist"</span>,
+}
+
+security = <span class="f">HTTPBearer</span>()
+
+<span class="k">async def</span> <span class="f">get_current_user</span>(credentials: HTTPAuthorizationCredentials = <span class="f">Security</span>(security)):
+    token = credentials.credentials
+    <span class="k">try</span>:
+        <span class="c"># Fetch signing keys from Azure AD</span>
+        <span class="k">async with</span> httpx.<span class="f">AsyncClient</span>() <span class="k">as</span> client:
+            keys = (<span class="k">await</span> client.<span class="f">get</span>(JWKS_URL)).json()
+
+        payload = jwt.<span class="f">decode</span>(token, keys, algorithms=[<span class="s">"RS256"</span>],
+                               audience=CLIENT_ID)
+
+        user_id = payload.<span class="f">get</span>(<span class="s">"oid"</span>)   <span class="c"># Azure object ID</span>
+        groups  = payload.<span class="f">get</span>(<span class="s">"groups"</span>, [])
+
+        <span class="c"># Map Azure AD group to internal role</span>
+        role = <span class="n">None</span>
+        <span class="k">for</span> group <span class="k">in</span> groups:
+            <span class="k">if</span> group <span class="k">in</span> ROLE_MAP:
+                role = ROLE_MAP[group]
+                <span class="k">break</span>
+
+        <span class="k">if not</span> role:
+            <span class="k">raise</span> <span class="f">HTTPException</span>(status_code=<span class="n">403</span>, detail=<span class="s">"No recognized medical role assigned"</span>)
+
+        patient_id = payload.<span class="f">get</span>(<span class="s">"extension_patientId"</span>, <span class="n">None</span>)  <span class="c"># custom AD attribute</span>
+        <span class="k">return</span> {<span class="s">"user_id"</span>: user_id, <span class="s">"role"</span>: role, <span class="s">"patient_id"</span>: patient_id}
+
+    <span class="k">except</span> JWTError:
+        <span class="k">raise</span> <span class="f">HTTPException</span>(status_code=<span class="n">401</span>, detail=<span class="s">"Invalid or expired token"</span>)</pre>
+    </div>
+
+    <div class="callout callout-warn">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">⚠️ Don't skip this step for real patient data</div>
+        <div class="callout-text">HIPAA and most institutional data governance policies require that access to patient records be governed by a verified identity system — not a self-reported role in a chat message. Even for a pilot or internal tool, use Azure AD from day one. Retrofitting auth later is much harder than building it in.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Phase 3 — Persistent vector store -->
+  <section class="section" id="phase3">
+    <div class="phase-header">
+      <div class="phase-badge">3</div>
+      <div>
+        <div class="phase-title">Switch to a Persistent Vector Store</div>
+        <div class="phase-sub">Phase 2 cont. — Replace in-memory ChromaDB</div>
+      </div>
+    </div>
+
+    <p>The lab uses <code>chromadb.Client()</code> — in-memory, lost on restart. Production needs persistent storage. You have two good options:</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Option</th><th>Best for</th><th>Setup effort</th><th>Cost</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>ChromaDB server</strong> (self-hosted)</td>
+            <td>Staying close to the lab code, on-prem or VM deployment</td>
+            <td><span class="badge badge-green">Low</span> — one Docker command</td>
+            <td>Infrastructure only</td>
+          </tr>
+          <tr>
+            <td><strong>Azure AI Search</strong></td>
+            <td>Full Azure integration, managed service, enterprise scale</td>
+            <td><span class="badge badge-gold">Medium</span> — portal setup + SDK swap</td>
+            <td>Per-query pricing</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Option A — Persistent ChromaDB server</h2>
+    <p>The smallest change from the lab code — just point to a server instead of in-memory:</p>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>terminal — run ChromaDB as a persistent server</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="c"># Run ChromaDB with data persisted to ./chroma-data</span>
+docker run -d \
+  -p 8000:8000 \
+  -v $(pwd)/chroma-data:/chroma/chroma \
+  chromadb/chroma:latest</pre>
+    </div>
+
+    <p>Then in <code>vector_store.py</code>, replace the client line:</p>
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>vector_store.py — one-line change</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="c"># Replace this (in-memory — lab version):</span>
+chroma_client = chromadb.<span class="f">Client</span>()
+
+<span class="c"># With this (persistent server — production version):</span>
+chroma_client = chromadb.<span class="f">HttpClient</span>(host=<span class="s">"localhost"</span>, port=<span class="n">8000</span>)
+<span class="c"># In Azure, replace "localhost" with your container's internal hostname</span></pre>
+    </div>
+
+    <h2>Option B — Azure AI Search</h2>
+    <p>Fully managed, integrates with Azure RBAC and Key Vault. Install the SDK and update the retrieval functions:</p>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>terminal</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>pip install azure-search-documents azure-identity</pre>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>vector_store_azure.py</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="k">from</span> azure.search.documents <span class="k">import</span> SearchClient
+<span class="k">from</span> azure.search.documents.models <span class="k">import</span> VectorizedQuery
+<span class="k">from</span> azure.identity <span class="k">import</span> DefaultAzureCredential
+<span class="k">from</span> sentence_transformers <span class="k">import</span> SentenceTransformer
+<span class="k">import</span> os
+
+embedder = <span class="f">SentenceTransformer</span>(<span class="s">"all-MiniLM-L6-v2"</span>)
+
+search_client = <span class="f">SearchClient</span>(
+    endpoint=os.environ[<span class="s">"AZURE_SEARCH_ENDPOINT"</span>],
+    index_name=<span class="s">"medical-records"</span>,
+    credential=<span class="f">DefaultAzureCredential</span>()  <span class="c"># uses Managed Identity — no keys!</span>
+)
+
+<span class="k">def</span> <span class="f">query_patient</span>(question: str, patient_id: str) -> str:
+    vector = <span class="f">VectorizedQuery</span>(
+        vector=embedder.<span class="f">encode</span>(question).<span class="f">tolist</span>(),
+        k_nearest_neighbors=<span class="n">5</span>,
+        fields=<span class="s">"embedding"</span>
+    )
+    results = search_client.<span class="f">search</span>(
+        search_text=<span class="n">None</span>,
+        vector_queries=[vector],
+        filter=<span class="s">f"patient_id eq '{patient_id}'"</span>,  <span class="c"># OData filter — same concept as ChromaDB where</span>
+        select=[<span class="s">"content"</span>, <span class="s">"patient_id"</span>, <span class="s">"section"</span>]
+    )
+    return <span class="s">"\n\n"</span>.<span class="f">join</span>([
+        <span class="s">f"[Patient {r['patient_id']} | {r['section'].upper()}] {r['content']}"</span>
+        <span class="k">for</span> r <span class="k">in</span> results
+    ])</pre>
+    </div>
+
+    <div class="callout callout-check">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">✅ Notice what didn't change</div>
+        <div class="callout-text">The <code>filter</code> parameter in Azure AI Search does the same job as ChromaDB's <code>where</code> clause — it enforces data boundaries at the retrieval layer. The agent code and tool signatures stay identical. Only the backend swaps.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Phase 4 — FastAPI wrapper -->
+  <section class="section" id="phase4">
+    <div class="phase-header">
+      <div class="phase-badge">4</div>
+      <div>
+        <div class="phase-title">Wrap the Team as a REST API with FastAPI</div>
+        <div class="phase-sub">Phase 2 cont. — Any client can now call your agent system</div>
+      </div>
+    </div>
+
+    <p>FastAPI gives your agent system an HTTP interface so web apps, mobile apps, EHR systems, or any other client can send queries and receive responses. This is also where the verified role from Phase 2 gets injected into the agent context.</p>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>terminal</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>pip install fastapi uvicorn</pre>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>main.py</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="k">from</span> fastapi <span class="k">import</span> FastAPI, Depends
+<span class="k">from</span> pydantic <span class="k">import</span> BaseModel
+<span class="k">from</span> auth <span class="k">import</span> get_current_user
+<span class="k">from</span> team <span class="k">import</span> team, run
+<span class="k">import</span> asyncio, logging
+
+app = <span class="f">FastAPI</span>(title=<span class="s">"Medical Records AI API"</span>, version=<span class="s">"1.0"</span>)
+logger = logging.<span class="f">getLogger</span>(__name__)
+
+<span class="k">class</span> QueryRequest(BaseModel):
+    message: str
+
+<span class="k">class</span> QueryResponse(BaseModel):
+    response: str
+    role_used: str
+    patient_id: str | <span class="n">None</span>
+
+@app.<span class="f">post</span>(<span class="s">"/query"</span>, response_model=QueryResponse)
+<span class="k">async def</span> <span class="f">query</span>(
+    request: QueryRequest,
+    user: dict = <span class="f">Depends</span>(get_current_user)   <span class="c"># ← auth runs here, before agent</span>
+):
+    role       = user[<span class="s">"role"</span>]
+    patient_id = user.<span class="f">get</span>(<span class="s">"patient_id"</span>)
+    user_id    = user[<span class="s">"user_id"</span>]
+
+    <span class="c"># Inject verified role into message — LLM never decides who the user is</span>
+    enriched_message = (
+        <span class="s">f"[SYSTEM: Verified user. Role={role}. PatientID={patient_id or 'N/A'}]\n"</span>
+        <span class="s">f"User query: {request.message}"</span>
+    )
+
+    <span class="c"># Audit log every request</span>
+    logger.<span class="f">info</span>(<span class="s">f"QUERY user={user_id} role={role} patient={patient_id} msg={request.message[:80]}"</span>)
+
+    result = <span class="k">await</span> <span class="f">run</span>(enriched_message)
+
+    <span class="k">return</span> <span class="f">QueryResponse</span>(
+        response=result.messages[-<span class="n">1</span>].content,
+        role_used=role,
+        patient_id=patient_id
+    )
+
+@app.<span class="f">get</span>(<span class="s">"/health"</span>)
+<span class="k">async def</span> <span class="f">health</span>(): <span class="k">return</span> {<span class="s">"status"</span>: <span class="s">"ok"</span>}</pre>
+    </div>
+
+    <h3>Run it locally</h3>
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>terminal</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>uvicorn main:app --reload --port 8000
+
+<span class="c"># FastAPI auto-generates interactive docs at:</span>
+<span class="c"># http://localhost:8000/docs</span></pre>
+    </div>
+
+    <h3>Test it with curl</h3>
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>terminal</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>curl -X POST http://localhost:8000/query \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What was my diagnosis?"}'</pre>
+    </div>
+
+    <div class="callout callout-key">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">🔑 What changed in the OrchestratorAgent</div>
+        <div class="callout-text">The OrchestratorAgent's system prompt no longer needs to ask for the user's role — it receives it in the enriched message. Update its prompt to: <em>"You will receive a verified role and patient ID at the start of each message in [SYSTEM: ...] tags. Route directly to the appropriate specialist agent without asking for role confirmation."</em> This makes the API feel seamless — no conversational role-check friction for the end user.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Phase 5 — Docker -->
+  <section class="section" id="phase5">
+    <div class="phase-header">
+      <div class="phase-badge">5</div>
+      <div>
+        <div class="phase-title">Containerize with Docker</div>
+        <div class="phase-sub">Phase 3 — Package everything for deployment</div>
+      </div>
+    </div>
+
+    <p>Docker packages your application and all its dependencies into a single portable image. This is the standard unit of deployment for Azure Container Apps and most cloud services.</p>
+
+    <h3>Project structure at this point</h3>
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>project layout before containerizing</div>
+<pre>medical-demo/
+├── main.py               <span class="c">← FastAPI app</span>
+├── auth.py               <span class="c">← Azure AD token validation</span>
+├── team.py               <span class="c">← exported AutoGen team</span>
+├── tools/
+│   ├── vector_store.py
+│   ├── transcription_tool.py
+│   └── mock_transcripts.py
+├── requirements.txt
+└── Dockerfile</pre>
+    </div>
+
+    <h3>requirements.txt</h3>
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>requirements.txt</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>autogenstudio
+fastapi
+uvicorn[standard]
+openai
+openai-whisper
+chromadb
+sentence-transformers
+azure-identity
+python-jose[cryptography]
+httpx
+python-dotenv</pre>
+    </div>
+
+    <h3>Dockerfile</h3>
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>Dockerfile</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>FROM python:3.11-slim
+
+<span class="c"># Install system dependencies for Whisper</span>
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+<span class="c"># Expose FastAPI port</span>
+EXPOSE 8000
+
+<span class="c"># Secrets come from environment variables — never hardcoded</span>
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]</pre>
+    </div>
+
+    <h3>Build and test locally</h3>
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>terminal</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="c"># Build the image</span>
+docker build -t medical-demo:latest .
+
+<span class="c"># Run it — pass secrets as environment variables, never bake them in</span>
+docker run -p 8000:8000 \
+  -e AZURE_OPENAI_API_KEY=your_key \
+  -e AZURE_OPENAI_ENDPOINT=your_endpoint \
+  -e AZURE_DEPLOYMENT_NAME=gpt-4.1 \
+  -e AZURE_API_VERSION=2024-12-01-preview \
+  -e AZURE_TENANT_ID=your_tenant \
+  -e AZURE_CLIENT_ID=your_client_id \
+  medical-demo:latest</pre>
+    </div>
+
+    <div class="callout callout-warn">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">⚠️ Never bake secrets into the image</div>
+        <div class="callout-text">Do not copy your <code>.env</code> file into the Docker image and do not set secret values in the Dockerfile itself. Always pass them as environment variables at runtime, or better — use Azure Key Vault with Managed Identity (covered next) so secrets never appear in any config file at all.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Phase 6 — Azure deployment -->
+  <section class="section" id="phase6">
+    <div class="phase-header">
+      <div class="phase-badge">6</div>
+      <div>
+        <div class="phase-title">Deploy to Azure</div>
+        <div class="phase-sub">Phase 3 cont. — Three options depending on your scale</div>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Option</th><th>Best for</th><th>Autoscales</th><th>Complexity</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Azure Container Apps</strong></td>
+            <td>Most AI API deployments — serverless, scales to zero</td>
+            <td><span class="badge badge-green">Yes</span></td>
+            <td><span class="badge badge-green">Low</span></td>
+          </tr>
+          <tr>
+            <td><strong>Azure App Service</strong></td>
+            <td>Always-on apps, simpler pricing model</td>
+            <td><span class="badge badge-gold">Manual</span></td>
+            <td><span class="badge badge-green">Low</span></td>
+          </tr>
+          <tr>
+            <td><strong>Azure Kubernetes Service (AKS)</strong></td>
+            <td>High-throughput, multiple microservices, full control</td>
+            <td><span class="badge badge-green">Yes</span></td>
+            <td><span class="badge badge-maroon">High</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>For a medical records AI system at pilot or departmental scale, <strong>Azure Container Apps</strong> is the right choice — serverless, scales to zero when idle, and integrates cleanly with Managed Identity and Key Vault.</p>
+
+    <h2>Deploy with Azure Container Apps</h2>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>terminal — Azure CLI</div>
+      <div class="shell-tabs">
+        <button class="shell-tab active" onclick="switchTab(this,'mac-aca1')">Mac / Linux</button>
+        <button class="shell-tab" onclick="switchTab(this,'ps-aca1')">PowerShell (VS Code)</button>
+      </div>
+      <div id="mac-aca1" class="shell-pane active">
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="c"># 1. Log in to Azure</span>
+az login
+
+<span class="c"># 2. Create a container registry to store your image</span>
+az acr create --name medicaldemoacr --resource-group YOUR_RG \
+  --sku Basic --admin-enabled true
+
+<span class="c"># 3. Build and push your image to the registry</span>
+az acr build --registry medicaldemoacr \
+  --image medical-demo:latest .
+
+<span class="c"># 4. Create the Container Apps environment</span>
+az containerapp env create \
+  --name medical-env \
+  --resource-group YOUR_RG \
+  --location eastus
+
+<span class="c"># 5. Deploy the container app</span>
+az containerapp create \
+  --name medical-demo \
+  --resource-group YOUR_RG \
+  --environment medical-env \
+  --image medicaldemoacr.azurecr.io/medical-demo:latest \
+  --target-port 8000 \
+  --ingress external \
+  --min-replicas 0 \
+  --max-replicas 10 \
+  --secrets "oai-key=YOUR_KEY" \
+  --env-vars "AZURE_OPENAI_API_KEY=secretref:oai-key"</pre>
+      </div>
+      <div id="ps-aca1" class="shell-pane">
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="c"># 1. Log in to Azure</span>
+az login
+
+<span class="c"># 2. Create a container registry</span>
+az acr create --name medicaldemoacr --resource-group YOUR_RG `
+  --sku Basic --admin-enabled true
+
+<span class="c"># 3. Build and push your image</span>
+az acr build --registry medicaldemoacr `
+  --image medical-demo:latest .
+
+<span class="c"># 4. Create the Container Apps environment</span>
+az containerapp env create `
+  --name medical-env `
+  --resource-group YOUR_RG `
+  --location eastus
+
+<span class="c"># 5. Deploy the container app</span>
+az containerapp create `
+  --name medical-demo `
+  --resource-group YOUR_RG `
+  --environment medical-env `
+  --image medicaldemoacr.azurecr.io/medical-demo:latest `
+  --target-port 8000 `
+  --ingress external `
+  --min-replicas 0 `
+  --max-replicas 10 `
+  --secrets "oai-key=YOUR_KEY" `
+  --env-vars "AZURE_OPENAI_API_KEY=secretref:oai-key"
+
+<span class="c"># Note: PowerShell uses backtick ` for line continuation, not \</span></pre>
+      </div>
+    </div>
+
+    <h2>Enable Managed Identity (replace API keys with identity-based access)</h2>
+    <p>Once deployed, enable a system-assigned Managed Identity so your container can access Azure OpenAI and Key Vault without any stored credentials:</p>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>terminal — Azure CLI (same on Mac and PowerShell)</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="c"># Enable Managed Identity on your container app</span>
+az containerapp identity assign \
+  --name medical-demo \
+  --resource-group YOUR_RG \
+  --system-assigned
+
+<span class="c"># Grant it access to your Azure OpenAI resource</span>
+az role assignment create \
+  --assignee YOUR_MANAGED_IDENTITY_PRINCIPAL_ID \
+  --role "Cognitive Services OpenAI User" \
+  --scope /subscriptions/YOUR_SUB/resourceGroups/YOUR_RG/providers/Microsoft.CognitiveServices/accounts/YOUR_OAI_RESOURCE</pre>
+    </div>
+
+    <p>Then update your model client in <code>team.py</code> to use Managed Identity instead of an API key:</p>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>team.py — swap API key for Managed Identity</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="k">from</span> azure.identity <span class="k">import</span> DefaultAzureCredential, get_bearer_token_provider
+
+<span class="c"># DefaultAzureCredential picks up Managed Identity automatically in Azure</span>
+token_provider = <span class="f">get_bearer_token_provider</span>(
+    <span class="f">DefaultAzureCredential</span>(),
+    <span class="s">"https://cognitiveservices.azure.com/.default"</span>
+)
+
+model_client = <span class="f">AzureOpenAIChatCompletionClient</span>(
+    azure_deployment=os.environ[<span class="s">"AZURE_DEPLOYMENT_NAME"</span>],
+    api_version=os.environ[<span class="s">"AZURE_API_VERSION"</span>],
+    azure_endpoint=os.environ[<span class="s">"AZURE_OPENAI_ENDPOINT"</span>],
+    azure_ad_token_provider=token_provider,  <span class="c"># ← no api_key needed</span>
+)</pre>
+    </div>
+  </section>
+
+  <!-- Phase 7 — Production checklist -->
+  <section class="section" id="phase7">
+    <div class="phase-header">
+      <div class="phase-badge">7</div>
+      <div>
+        <div class="phase-title">Production Readiness Checklist</div>
+        <div class="phase-sub">Before going live with real data</div>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Category</th><th>Item</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Auth</strong></td><td>Azure AD / Entra ID replaces conversational role-check</td><td><span class="badge badge-maroon">Must have</span></td></tr>
+          <tr><td><strong>Auth</strong></td><td>Patient ID injected from verified token, not user input</td><td><span class="badge badge-maroon">Must have</span></td></tr>
+          <tr><td><strong>Secrets</strong></td><td>API keys replaced by Managed Identity</td><td><span class="badge badge-maroon">Must have</span></td></tr>
+          <tr><td><strong>Secrets</strong></td><td>Remaining secrets stored in Azure Key Vault</td><td><span class="badge badge-maroon">Must have</span></td></tr>
+          <tr><td><strong>Storage</strong></td><td>ChromaDB in-memory replaced by persistent store</td><td><span class="badge badge-maroon">Must have</span></td></tr>
+          <tr><td><strong>API</strong></td><td>FastAPI wrapper with /health endpoint</td><td><span class="badge badge-maroon">Must have</span></td></tr>
+          <tr><td><strong>Logging</strong></td><td>Every query logged with user_id, role, timestamp</td><td><span class="badge badge-maroon">Must have</span></td></tr>
+          <tr><td><strong>Logging</strong></td><td>Azure Monitor / Application Insights connected</td><td><span class="badge badge-gold">Recommended</span></td></tr>
+          <tr><td><strong>Resilience</strong></td><td>Retry logic on Azure OpenAI calls (rate limits)</td><td><span class="badge badge-gold">Recommended</span></td></tr>
+          <tr><td><strong>Resilience</strong></td><td>Graceful error responses — no stack traces to users</td><td><span class="badge badge-gold">Recommended</span></td></tr>
+          <tr><td><strong>Scaling</strong></td><td>min-replicas=0, max-replicas set per expected load</td><td><span class="badge badge-blue">Nice to have</span></td></tr>
+          <tr><td><strong>CI/CD</strong></td><td>GitHub Actions pipeline for build → push → deploy</td><td><span class="badge badge-blue">Nice to have</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-green">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">✅ What the lab taught you that transfers directly</div>
+        <div class="callout-text">The <strong>agent architecture</strong>, <strong>system prompts</strong>, <strong>tool function signatures</strong>, and <strong>retrieval filtering logic</strong> from the lab are identical in production. None of that changes. What changes is the infrastructure around it — auth, storage, API layer, hosting. The agents themselves are already production-quality; the lab was designed that way intentionally.</div>
+      </div>
+    </div>
+
+    <h2>Further Reading</h2>
+    <ul>
+      <li><a href="https://microsoft.github.io/autogen/" target="_blank">AutoGen documentation</a> — latest framework reference</li>
+      <li><a href="https://learn.microsoft.com/en-us/azure/container-apps/" target="_blank">Azure Container Apps documentation</a></li>
+      <li><a href="https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/managed-identity" target="_blank">Azure OpenAI with Managed Identity</a></li>
+      <li><a href="https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search" target="_blank">Azure AI Search documentation</a></li>
+      <li><a href="https://learn.microsoft.com/en-us/entra/identity-platform/v2-overview" target="_blank">Microsoft Entra ID (Azure AD) developer guide</a></li>
+    </ul>
+  </section>
+
+  <footer>
+    <div><strong>MSBA 6155</strong> — Generative AI in Business · Carlson School of Management · University of Minnesota</div>
+    <div><a href="index.html">← Back to Lab Tutorial</a></div>
+  </footer>
+
+</main>
+
+<button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">↑</button>
+
+<script>
+  const bar = document.getElementById('progress-bar');
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    bar.style.transform = `scaleX(${h.scrollTop / (h.scrollHeight - h.clientHeight)})`;
+  });
+
+  const btn = document.getElementById('back-top');
+  window.addEventListener('scroll', () => btn.classList.toggle('visible', window.scrollY > 400));
+
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+  new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting)
+        navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === `#${e.target.id}`));
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' }).observe
+  sections.forEach(s => new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting)
+        navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === `#${e.target.id}`));
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' }).observe(s));
+
+  function switchTab(btn, paneId) {
+    const wrap = btn.closest('.code-wrap');
+    wrap.querySelectorAll('.shell-tab').forEach(t => t.classList.remove('active'));
+    wrap.querySelectorAll('.shell-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(paneId).classList.add('active');
+  }
+
+  function copyCode(btn) {
+    const pane = btn.closest('.shell-pane') || btn.closest('.code-wrap');
+    const text = pane.querySelector('pre').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
