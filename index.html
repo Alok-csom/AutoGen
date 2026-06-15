@@ -617,7 +617,7 @@
     <a class="nav-link" href="#step4"><span class="step-num">4</span>Vector Store Tool</a>
     <a class="nav-link" href="#step5"><span class="step-num">5</span>Startup Script</a>
     <a class="nav-link" href="#step6"><span class="step-num">6</span>Register Tools</a>
-    <a class="nav-link" href="#step7"><span class="step-num">7</span>Build Team from Template</a>
+    <a class="nav-link" href="#step7"><span class="step-num">7</span>Add Azure Model to Gallery</a>
     <a class="nav-link" href="#step8"><span class="step-num">8</span>Build the Five Agents</a>
 
     <div class="nav-section-label">What's Next</div>
@@ -870,8 +870,8 @@ mkdir tools
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
 <pre>AZURE_OPENAI_API_KEY=your_azure_key_here
 AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_DEPLOYMENT_NAME=gpt-4.1
-AZURE_API_VERSION=2024-12-01-preview</pre>
+AZURE_DEPLOYMENT_NAME=gpt-4
+<span class="c"># AZURE_API_VERSION=2024-12-01-preview  # comment out if your Foundry endpoint doesn't require it</span></pre>
     </div>
 
     <div class="callout callout-tip">
@@ -888,6 +888,8 @@ AZURE_API_VERSION=2024-12-01-preview</pre>
             <li>Click <strong>Keys and Endpoint</strong> → copy <strong>Key 1</strong> → this is your <code>AZURE_OPENAI_API_KEY</code></li>
             <li>Go to <strong>Deployments</strong> → copy the name of your GPT-4.1 deployment exactly as listed → this is your <code>AZURE_DEPLOYMENT_NAME</code></li>
           </ol>
+          <br>
+          <strong>⚠️ Endpoint format matters:</strong> The "View Code" page in Azure AI Foundry may show an endpoint ending in <code>/openai/v1</code> — do not include this suffix in your <code>.env</code> file. Use the base URL only: <code>https://your-resource.openai.azure.com/</code>. Including the suffix causes a doubled URL path and a 404 error. See Step 11 for full details.
         </div>
       </div>
     </div>
@@ -1281,10 +1283,19 @@ python mock_transcripts.py
         structured = <span class="f">extract_sections</span>(result[<span class="s">"text"</span>], patient_id)
         records.<span class="f">append</span>(structured)
 
-    <span class="k">with</span> <span class="f">open</span>(<span class="s">"transcripts.json"</span>, <span class="s">"w"</span>) <span class="k">as</span> f:
-        json.<span class="f">dump</span>(records, f, indent=<span class="n">2</span>)
+    <span class="c"># Load existing records and only add new patients — never overwrite</span>
+    existing = []
+    <span class="k">if</span> os.path.<span class="f">exists</span>(<span class="s">"transcripts.json"</span>):
+        <span class="k">with</span> <span class="f">open</span>(<span class="s">"transcripts.json"</span>) <span class="k">as</span> f:
+            existing = json.<span class="f">load</span>(f)
 
-    <span class="k">return</span> <span class="s">f"Transcribed {len(records)} files. Saved to transcripts.json."</span>
+    existing_ids = {r[<span class="s">"patient_id"</span>] <span class="k">for</span> r <span class="k">in</span> existing}
+    new_records = [r <span class="k">for</span> r <span class="k">in</span> records <span class="k">if</span> r[<span class="s">"patient_id"</span>] <span class="k">not in</span> existing_ids]
+
+    <span class="k">with</span> <span class="f">open</span>(<span class="s">"transcripts.json"</span>, <span class="s">"w"</span>) <span class="k">as</span> f:
+        json.<span class="f">dump</span>(existing + new_records, f, indent=<span class="n">2</span>)
+
+    <span class="k">return</span> <span class="s">f"Transcribed {len(new_records)} new file(s). transcripts.json now has {len(existing + new_records)} patient(s)."</span>
 
 
 <span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
@@ -1418,6 +1429,48 @@ collection = chroma_client.<span class="f">get_or_create_collection</span>(<span
     <span class="f">print</span>(<span class="f">query_prescriptions</span>(<span class="s">"What medications were prescribed?"</span>))</pre>
     </div>
 
+    <h3>Test it — run this from your <code>medical-demo</code> folder</h3>
+    <p>The script has a test block at the bottom that runs all three query functions. Before running it you need <code>transcripts.json</code> to exist — so make sure you completed Step 3 first (or ran <code>mock_transcripts.py</code> to generate it). Then:</p>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>PowerShell (VS Code) — run from medical-demo folder</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>cd C:\path\to\medical-demo
+python tools\vector_store.py</pre>
+    </div>
+
+    <p>You should see three blocks of output — one for each query type:</p>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>expected output</div>
+<pre><span class="c">Ingested 9 sections from 3 patient records.</span>
+
+<span class="c">--- Doctor query (no filter) ---</span>
+[Patient P001 | PRESCRIPTION] Amoxicillin 500mg twice daily for 7 days...
+[Patient P002 | PRESCRIPTION] Atorvastatin 20mg once daily at bedtime...
+[Patient P003 | DIAGNOSIS] Mild hypertension, likely stress-related...
+
+<span class="c">--- Patient P001 query (filtered by patient_id) ---</span>
+[Patient P001 | SUMMARY] Patient presented with persistent cough...
+[Patient P001 | DIAGNOSIS] Mild bronchitis...
+[Patient P001 | PRESCRIPTION] Amoxicillin 500mg twice daily...
+
+<span class="c">--- Pharmacist query (prescriptions only) ---</span>
+[Patient P001 | PRESCRIPTION] Amoxicillin 500mg twice daily for 7 days...
+[Patient P002 | PRESCRIPTION] Atorvastatin 20mg once daily at bedtime...
+[Patient P003 | PRESCRIPTION] Lisinopril 10mg once daily...</pre>
+    </div>
+
+    <p>Notice the difference between the three outputs — this is the access control working at the database level. The doctor query returns all sections across all patients. The patient query returns only P001's records. The pharmacist query returns only prescription sections regardless of patient. The LLM agents will only ever see what these queries return.</p>
+
+    <div class="callout callout-check">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">✅ Checkpoint</div>
+        <div class="callout-text">If you see three distinct blocks of output with <code>[Patient Pxxx | SECTION]</code> prefixes, the vector store is working correctly. If you get a <code>FileNotFoundError: transcripts.json</code> — run <code>python tools\mock_transcripts.py</code> first from the <code>medical-demo</code> folder to generate it.</div>
+      </div>
+    </div>
+
     <div class="callout callout-key">
       <div class="callout-stripe"></div>
       <div class="callout-body">
@@ -1425,7 +1478,6 @@ collection = chroma_client.<span class="f">get_or_create_collection</span>(<span
         <div class="callout-text">The <code>where={"section": "prescription"}</code> filter runs inside ChromaDB before any data reaches the LLM. This is not prompt-based security — it's database-level filtering. A pharmacist's agent physically cannot retrieve diagnosis or summary text, regardless of what they ask. Here's a question worth sitting with: <em>what's the difference between telling an LLM not to reveal something versus ensuring it never receives that data in the first place?</em></div>
       </div>
     </div>
-  </section>
 
   <!-- Step 5 -->
   <section class="section" id="step5">
@@ -1637,60 +1689,57 @@ All records indexed and ready."</span></pre>
   <section class="section" id="step7">
     <div class="step-header">
       <div class="step-badge">7</div>
-      <div><div class="step-title">Build the Team from the Selector Template</div><div class="step-time">⏱ ~5 minutes · In the browser</div></div>
+      <div><div class="step-title">Add Your Azure Model to the Gallery</div><div class="step-time">⏱ ~5 minutes · In the browser</div></div>
     </div>
 
-    <p>Rather than building from scratch, we'll use the <strong>Selector Team</strong> template that ships with AutoGen Studio. It already has SelectorGroupChat configured — we just swap out the agents, update the model to Azure, and set our selector prompt.</p>
+    <p>Before building agents we register our Azure model in the Gallery once. It then becomes a draggable tile you can drop onto any agent — no re-entering credentials each time.</p>
 
     <ol>
-      <li>In Team Builder, click the <strong>From Gallery</strong> tab</li>
-      <li>Click <strong>Selector Team</strong> → click <strong>Use</strong> or <strong>Open in Team Builder</strong></li>
-      <li>Rename the team to <strong>MedicalRecordsTeam</strong> by clicking the team name at the top</li>
-      <li>Delete the two default placeholder agents — click each agent node → click the delete (trash) icon</li>
+      <li>Click <strong>Gallery</strong> in the left sidebar → click <strong>Models</strong> → click <strong>+ New Model</strong></li>
+      <li>Click <strong>JSON Editor</strong> in the top right of the panel</li>
+      <li>Replace the entire JSON with the config below</li>
+      <li>Click <strong>Test</strong> — you should see a green success message</li>
+      <li>Click <strong>Save</strong></li>
     </ol>
 
-    <div class="callout callout-tip">
-      <div class="callout-stripe"></div>
-      <div class="callout-body">
-        <div class="callout-label">💡 Why start from the template?</div>
-        <div class="callout-text">The current AutoGen Studio UI doesn't offer a team-type dropdown when you click + New Team — it always creates a RoundRobinGroupChat by default. The Selector Team template is already configured as a SelectorGroupChat, which is exactly what we need for role-based routing. Starting from it saves you editing JSON to change the team type.</div>
-      </div>
-    </div>
-
-    <h3>Update the model to Azure AI Foundry</h3>
-    <p>The template comes with a default OpenAI model. We need to update it to point to your Azure deployment. Click the <strong>model node</strong> on the team canvas → click the <strong>edit (pencil) icon</strong> → you'll see a JSON config panel. Replace the entire model config with this:</p>
-
     <div class="code-wrap">
-      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>paste into the model node JSON editor</div>
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>Gallery → Models → + New Model → JSON Editor</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
 <pre>{
-  <span class="s">"provider"</span>: <span class="s">"autogen_ext.models.azure.AzureOpenAIChatCompletionClient"</span>,
+  <span class="s">"provider"</span>: <span class="s">"autogen_ext.models.openai.AzureOpenAIChatCompletionClient"</span>,
   <span class="s">"component_type"</span>: <span class="s">"model"</span>,
   <span class="s">"version"</span>: <span class="n">1</span>,
   <span class="s">"component_version"</span>: <span class="n">1</span>,
-  <span class="s">"label"</span>: <span class="s">"AzureOpenAIChatCompletionClient"</span>,
+  <span class="s">"description"</span>: <span class="s">"GPT-4 Azure OpenAI model client."</span>,
+  <span class="s">"label"</span>: <span class="s">"AzureOpenAI GPT-4"</span>,
   <span class="s">"config"</span>: {
-    <span class="s">"model"</span>: <span class="s">"gpt-4.1"</span>,
-    <span class="s">"azure_deployment"</span>: <span class="s">"gpt-4.1"</span>,
+    <span class="s">"model"</span>: <span class="s">"gpt-4"</span>,
+    <span class="s">"api_key"</span>: <span class="s">"your-azure-key-here"</span>,
     <span class="s">"azure_endpoint"</span>: <span class="s">"https://your-resource.openai.azure.com/"</span>,
-    <span class="s">"api_version"</span>: <span class="s">"2024-12-01-preview"</span>,
-    <span class="s">"api_key"</span>: <span class="s">"your-azure-api-key"</span>
+    <span class="s">"azure_deployment"</span>: <span class="s">"gpt-4"</span>,
+    <span class="s">"api_version"</span>: <span class="s">"2024-06-01"</span>
   }
 }</pre>
     </div>
 
-    <p>Replace <code>your-resource</code> with your actual Azure resource name, and <code>your-azure-api-key</code> with your key from the <code>.env</code> file. The <code>azure_deployment</code> and <code>model</code> values must both match your deployment name exactly. Click <strong>Save</strong>.</p>
+    <p>Replace <code>your-azure-key-here</code> with your key from <code>.env</code> and <code>your-resource</code> with your Azure resource name. Both <code>model</code> and <code>azure_deployment</code> should match your deployment name exactly as it appears in Azure Foundry. Endpoint must be the base URL only — no <code>/openai/v1</code> suffix.</p>
 
-    <div class="callout callout-warn">
+    <div class="callout callout-check">
       <div class="callout-stripe"></div>
       <div class="callout-body">
-        <div class="callout-label">⚠️ Azure model config requires JSON editing</div>
-        <div class="callout-text">The AutoGen Studio UI doesn't have a form for Azure models — you have to edit the JSON directly. This is the one unavoidable JSON edit in the whole lab. Everything else is drag-and-drop from here.</div>
+        <div class="callout-label">✅ Checkpoint</div>
+        <div class="callout-text">After clicking Test you should see a green success message. <strong>AzureOpenAI GPT-4</strong> now appears in the component library as a draggable tile — you'll drag it onto the team node and each agent in Steps 8 and 9.</div>
       </div>
     </div>
 
-    <h3>Update the selector prompt</h3>
-    <p>Click the <strong>team node</strong> → click the <strong>edit icon</strong> → find the <strong>Selector Prompt</strong> field and replace it with this:</p>
+    <h3>Set up the team from the Selector Template</h3>
+    <ol>
+      <li>Go to <strong>Team Builder</strong> → click <strong>From Gallery</strong> tab → click <strong>Selector Team</strong> → click <strong>Use</strong></li>
+      <li>Click the <strong>edit icon</strong> on the team node → change <strong>Name</strong> to <code>MedicalRecordsTeam</code> → Save</li>
+      <li>Delete the two placeholder agent nodes — click each → click the trash icon</li>
+      <li>Click the <strong>edit icon</strong> on the team node again → paste the selector prompt below → set <strong>Max Turns</strong> to <code>20</code> → Save</li>
+      <li>Drag <strong>AzureOpenAI GPT-4</strong> from the component library onto the team node's model drop zone</li>
+    </ol>
 
     <div class="code-wrap">
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>Selector Prompt — paste into team node editor</div>
@@ -1707,27 +1756,49 @@ Rules:
    - PATIENT     → select PatientAgent
    - PHARMACIST  → select PharmacistAgent
 3. Once a role is confirmed, keep the same specialist agent for follow-up questions.
-4. If the user asks something outside their role's scope, select OrchestratorAgent to redirect.
-5. LabAssistantAgent never answers medical questions — route immediately to OrchestratorAgent.</pre>
+4. If the user asks something outside their role scope, select OrchestratorAgent to redirect.
+5. LabAssistantAgent never answers medical questions — route to OrchestratorAgent.</pre>
     </div>
 
-    <p>Also set <strong>Max Turns</strong> to <strong>20</strong> in the team node editor. Click <strong>Save</strong>.</p>
+    <div class="callout callout-key">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">🔑 One model, used everywhere</div>
+        <div class="callout-text">Because you registered the Azure model once in the Gallery, you drag the same tile onto every agent in Step 8. You never re-enter credentials. This is why Gallery-first is the right workflow.</div>
+      </div>
+    </div>
+
   </section>
 
   <!-- Step 8 -->
   <section class="section" id="step8">
     <div class="step-header">
       <div class="step-badge">8</div>
-      <div><div class="step-title">Build and Add Your Five Agents</div><div class="step-time">⏱ ~15 minutes · In the browser</div></div>
+      <div><div class="step-title">Build and Add Your Five Agents</div><div class="step-time">⏱ ~12 minutes · drag-and-drop, no JSON needed</div></div>
     </div>
 
-    <p>Now we build each agent and add it to the team. For each agent below: click <strong>+ Add Agent</strong> in the team canvas (or drag an AssistantAgent from the component library) → click the agent's <strong>edit icon</strong> → set the name and system prompt → drag the appropriate tool onto the agent's tool drop zone → drag the Azure model onto the agent's model drop zone → save.</p>
+    <p>Now we build each of the five agents and add them to the team. For each agent the process is the same four steps:</p>
+
+    <ol>
+      <li>Drag an <strong>AssistantAgent</strong> from the component library onto the team canvas</li>
+      <li>Click the agent's <strong>edit icon</strong> → set the <strong>Name</strong> and paste the <strong>System Message</strong> → click Save</li>
+      <li>From the component library, drag <strong>AzureOpenAI GPT-4</strong> onto the agent's <strong>model drop zone</strong></li>
+      <li>From the component library, drag the appropriate <strong>tool(s)</strong> onto the agent's <strong>tool drop zone</strong></li>
+    </ol>
 
     <div class="callout callout-tip">
       <div class="callout-stripe"></div>
       <div class="callout-body">
-        <div class="callout-label">💡 Editing agent properties</div>
-        <div class="callout-text">Click the <strong>edit (pencil) icon</strong> on the top right of each agent node to open its properties panel. You'll see fields for name, description, and system message. For the model and tools, use the drop zones on the agent node itself — drag from the component library on the left sidebar.</div>
+        <div class="callout-label">💡 Drop zones</div>
+        <div class="callout-text">Each agent node has distinct drop zones that light up when you drag a compatible component over them. The <strong>model drop zone</strong> accepts model tiles. The <strong>tool drop zone</strong> accepts tool tiles. If a drop zone doesn't light up, you're dragging the wrong component type onto it.</div>
+      </div>
+    </div>
+
+    <div class="callout callout-check">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">✅ No JSON editing needed for agents</div>
+        <div class="callout-text">Because you registered the Azure model in the Gallery in Step 7, you never need to edit JSON inside an agent node. The model is a draggable tile. Set the name and system prompt in the form, drag the model and tools on — that's it.</div>
       </div>
     </div>
 
@@ -1846,7 +1917,7 @@ Use query_prescriptions_only for all queries.</pre>
       <div class="callout-stripe"></div>
       <div class="callout-body">
         <div class="callout-label">✅ Final checkpoint before demo</div>
-        <div class="callout-text">Your <strong>MedicalRecordsTeam</strong> canvas should show five agent nodes — LabAssistantAgent (two tools), OrchestratorAgent (no tools), DoctorAgent (query_all_records), PatientAgent (query_patient_records), and PharmacistAgent (query_prescriptions_only). Each agent should have the Azure gpt-4.1 model attached. Once it looks like this, you're ready — let's run the demo in Step 9.</div>
+        <div class="callout-text">Your <strong>MedicalRecordsTeam</strong> canvas should show five agent nodes. Each agent should have the <strong>AzureOpenAI GPT-4</strong> model tile attached (shown as a badge on the node). The team node itself should also show the model badge. Tool badges should appear on: LabAssistantAgent (two tools), DoctorAgent, PatientAgent, and PharmacistAgent. OrchestratorAgent has no tools. Once your canvas looks like this, you're ready — let's run the demo in Step 9.</div>
       </div>
     </div>
   </section>
@@ -2066,6 +2137,46 @@ $synth.Dispose()
     <div class="step-header">
       <div class="step-badge">11</div>
       <div><div class="step-title">Troubleshooting</div><div class="step-time">Common issues &amp; fixes</div></div>
+    </div>
+
+    <h2>Azure endpoint format — fix this if you get a 404</h2>
+
+    <div class="callout callout-key">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">🔑 The most common Azure 404 cause</div>
+        <div class="callout-text">The Azure AI Foundry "View Code" page shows an endpoint like <code>https://your-resource.openai.azure.com/openai/v1</code>. Do <strong>not</strong> paste this into your <code>.env</code> file as-is. The <code>openai.AzureOpenAI</code> client constructs the full URL by appending its own path to whatever endpoint you give it. If the endpoint already has <code>/openai/v1</code> baked in, the final URL ends up doubled — something like <code>.../openai/v1/openai/deployments/...</code> — which gives a 404.<br><br>
+        <strong>Always strip the path suffix.</strong> Your endpoint in <code>.env</code> should be the base URL only:</div>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>.env — correct format</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><span class="c"># ✅ Correct — base URL only, trailing slash, no path suffix</span>
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+
+<span class="c"># ❌ Wrong — has /openai/v1 suffix copied from Foundry View Code page</span>
+<span class="c"># AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/openai/v1</span></pre>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">💡 Also comment out api_version</div>
+        <div class="callout-text">The newer Azure AI Foundry endpoints don't require an <code>api_version</code> parameter. If your <code>.env</code> doesn't include <code>AZURE_API_VERSION</code>, comment it out in your Python code rather than trying different version strings — changing API versions introduces dependency conflicts with other packages. In <code>transcription_tool.py</code> and any other file that creates an <code>AzureOpenAI</code> client, comment the line out:</div>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>transcription_tool.py — comment out api_version</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>client = openai.<span class="f">AzureOpenAI</span>(
+    api_key=os.environ[<span class="s">"AZURE_OPENAI_API_KEY"</span>],
+    azure_endpoint=os.environ[<span class="s">"AZURE_OPENAI_ENDPOINT"</span>],
+    <span class="c"># api_version not required for Azure AI Foundry endpoints</span>
+    <span class="c"># api_version=os.environ["AZURE_API_VERSION"]</span>
+)</pre>
     </div>
 
     <h2>ffmpeg not found (Windows) — fix this first</h2>
