@@ -619,6 +619,7 @@
     <a class="nav-link" href="#step6"><span class="step-num">6</span>Register Tools</a>
     <a class="nav-link" href="#step7"><span class="step-num">7</span>Add Azure Model to Gallery</a>
     <a class="nav-link" href="#step8"><span class="step-num">8</span>Build the Five Agents</a>
+    <a class="nav-link" href="#step9"><span class="step-num">9</span>Add UserProxyAgent</a>
 
     <div class="nav-section-label">What's Next</div>
     <a class="nav-link" href="deployment-guide.html"><span class="step-num">→</span>Deployment Guide</a>
@@ -1945,7 +1946,86 @@ Use query_prescriptions_only for all queries.</pre>
       <div class="callout-stripe"></div>
       <div class="callout-body">
         <div class="callout-label">✅ Final checkpoint before demo</div>
-        <div class="callout-text">Your <strong>MedicalRecordsTeam</strong> canvas should show five agent nodes. Each agent should have the <strong>AzureOpenAI GPT-4</strong> model tile attached (shown as a badge on the node). The team node itself should also show the model badge. Tool badges should appear on: LabAssistantAgent (two tools), DoctorAgent, PatientAgent, and PharmacistAgent. OrchestratorAgent has no tools. Once your canvas looks like this, you're ready — let's run the demo in Step 9.</div>
+        <div class="callout-text">Your <strong>MedicalRecordsTeam</strong> canvas should show <strong>six agent nodes</strong> including the User agent you'll add in Step 9. Each specialist agent should have the <strong>AzureOpenAI GPT-4</strong> model tile attached. Tool badges should appear on: LabAssistantAgent (two tools), DoctorAgent, PatientAgent, and PharmacistAgent. OrchestratorAgent has no tools.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Step 9 -->
+  <section class="section" id="step9">
+    <div class="step-header">
+      <div class="step-badge">9</div>
+      <div><div class="step-title">Add a UserProxyAgent to Stop the Loop</div><div class="step-time">⏱ ~5 minutes · Critical — do not skip</div></div>
+    </div>
+
+    <p>Without a UserProxyAgent, the agents will loop continuously — LabAssistantAgent processes files, OrchestratorAgent asks for your role, but with nobody to answer, the selector picks another agent and the conversation spirals. The UserProxyAgent is what tells the system to stop and wait for a human to type.</p>
+
+    <div class="callout callout-key">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">🔑 Why this agent is different</div>
+        <div class="callout-text">All the other agents are <strong>AssistantAgents</strong> — they generate responses automatically. The <strong>UserProxyAgent</strong> represents you in the conversation. When the selector chooses it, the system pauses and waits for you to type in the Playground chat box. Without it the agents have no way to collect your input and just keep talking to each other.</div>
+      </div>
+    </div>
+
+    <h3>Add the UserProxyAgent to your team</h3>
+    <ol>
+      <li>In Team Builder, go to <strong>MedicalRecordsTeam</strong></li>
+      <li>In the component library on the left, find <strong>UserProxyAgent</strong> (it may be listed under Agent Types)</li>
+      <li>Drag it onto the team canvas</li>
+      <li>Click the <strong>edit icon</strong> on the agent node</li>
+      <li>Set the <strong>Name</strong> to <code>User</code></li>
+      <li>Leave the system message blank — this agent doesn't need one</li>
+      <li>Do <strong>not</strong> attach any tools or model to it</li>
+      <li>Click <strong>Save</strong></li>
+    </ol>
+
+    <div class="callout callout-tip">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">💡 If you don't see UserProxyAgent in the library</div>
+        <div class="callout-text">Click <strong>+ Add Agent</strong> on the canvas and look for a dropdown that lets you choose the agent type. Select <strong>UserProxyAgent</strong> from the list. If it only shows AssistantAgent, try clicking the arrow or chevron next to the agent type field — it should reveal other options including UserProxyAgent.</div>
+      </div>
+    </div>
+
+    <h3>Update the selector prompt to route through the User agent</h3>
+    <p>Click the <strong>edit icon</strong> on the team node → find the <strong>Selector Prompt</strong> field → replace it with this updated version that includes the User agent:</p>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>Updated Selector Prompt — paste into team node editor</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>You are routing messages in a medical records system.
+The available agents are: User, LabAssistantAgent, OrchestratorAgent,
+DoctorAgent, PatientAgent, PharmacistAgent.
+
+Rules:
+0. If files have not yet been processed and the user mentions audio files,
+   select LabAssistantAgent.
+1. After LabAssistantAgent finishes, select OrchestratorAgent to ask for the user role.
+2. After ANY agent asks a question or needs a response, select User
+   so the human can type their answer.
+3. After User responds with their role:
+   - DOCTOR      → select DoctorAgent
+   - PATIENT     → select PatientAgent
+   - PHARMACIST  → select PharmacistAgent
+4. After a specialist agent answers, select User so the human can ask a follow-up.
+5. If the user asks something outside their role scope, select OrchestratorAgent.
+6. LabAssistantAgent never answers medical questions.</pre>
+    </div>
+
+    <div class="callout callout-warn">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">⚠️ The key rule is Rule 2</div>
+        <div class="callout-text">Rule 2 — "after ANY agent asks a question, select User" — is what breaks the loop. It forces the selector to hand control back to the human after every agent response, rather than picking another agent to respond automatically. Without this rule the agents answer each other indefinitely.</div>
+      </div>
+    </div>
+
+    <div class="callout callout-check">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">✅ Checkpoint</div>
+        <div class="callout-text">Your MedicalRecordsTeam canvas should now show <strong>six nodes</strong>: User, LabAssistantAgent, OrchestratorAgent, DoctorAgent, PatientAgent, and PharmacistAgent. The selector prompt should reference all six agents by name. Now you're ready to run the demo.</div>
       </div>
     </div>
   </section>
