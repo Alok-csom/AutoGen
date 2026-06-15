@@ -637,7 +637,7 @@
     <div class="hero-eyebrow">MSBA 6155 · Generative AI in Business · Lab Tutorial</div>
     <h1>Building a Role-Based Medical Q&amp;A System with AutoGen Studio</h1>
     <p class="hero-author">Prof. Alok Gupta &nbsp;·&nbsp; Curtis L. Carlson Chair in Information Management</p>
-    <p class="hero-sub">Welcome! In this lab we'll build a working multi-agent AI system together — from raw audio files to a live demo with three user roles, using AutoGen Studio's drag-and-drop interface, Azure AI Foundry (GPT-4.1), and ChromaDB. No security backend needed.</p>
+    <p class="hero-sub">In this lab you'll build a working multi-agent AI system from scratch — from raw audio files to a live demo with three user roles. We'll use AutoGen Studio's drag-and-drop interface, Azure AI Foundry (GPT-4.1), and ChromaDB. No security backend needed.</p>
     <div class="hero-pills">
       <span class="pill pill-gold">AutoGen Studio v0.4</span>
       <span class="pill pill-teal">Azure AI Foundry</span>
@@ -654,7 +654,7 @@
       <div><div class="step-title">Overview &amp; Learning Objectives</div><div class="step-time">Read this before we start</div></div>
     </div>
 
-    <p>This lab is designed to give you hands-on experience with multi-agent AI systems — not just the theory. We'll build the whole thing from scratch, together, in class. By the end of this session you'll have a working system that demonstrates role-based access control using nothing more than conversational prompts and retrieval filtering — no authentication server, no backend, just agents doing what they're designed to do.</p>
+    <p>In this lab you'll get hands-on experience building a multi-agent AI system — not just the theory. By the end of the session you'll have a working system that demonstrates role-based access control using nothing more than conversational prompts and retrieval filtering. No authentication server, no backend — just agents doing exactly what they're designed to do.</p>
 
     <p>The scenario: a hospital has audio recordings of doctor-patient conversations. Different users — doctors, patients, and pharmacists — need to query those records, but each should only see what they're authorized to see. We'll build an agent system that enforces this automatically.</p>
 
@@ -731,7 +731,7 @@
       <div><div class="step-title">System Architecture</div><div class="step-time">Understand before you build</div></div>
     </div>
 
-    <p>Before we write any code, let's map out the architecture together. There are two distinct phases: an <strong>offline setup phase</strong> (Steps 1–5, which you'll do before class) and a <strong>live conversation phase</strong> (Steps 6–10, which we build together in class). Understanding this split matters because it determines where each component lives and why.</p>
+    <p>Before we write any code, let's look at how the whole system fits together. There are two distinct phases: an <strong>offline setup phase</strong> (Steps 1–5, which you'll complete before class) and a <strong>live conversation phase</strong> (Steps 6–10, which we'll build together). Understanding this split matters because it determines where each component lives and why.</p>
 
     <div class="flow">
       <div class="flow-row">
@@ -774,7 +774,7 @@
       <div class="callout-stripe"></div>
       <div class="callout-body">
         <div class="callout-label">💡 Why metadata filtering matters</div>
-        <div class="callout-text">The <code>where</code> filter in ChromaDB is the real access boundary — not the system prompt. A pharmacist's query physically only retrieves records tagged <code>section=prescription</code>. The LLM cannot leak diagnosis data because it never receives it. This is the distinction I'll want to discuss with you in class after we run the pharmacist scenario.</div>
+        <div class="callout-text">The <code>where</code> filter in ChromaDB is the real access boundary — not the system prompt. A pharmacist's query physically only retrieves records tagged <code>section=prescription</code>. The LLM cannot leak diagnosis data because it never receives it. This distinction — prompt-based restriction versus data-layer filtering — is one of the key concepts we'll come back to when we run the pharmacist scenario in the demo.</div>
       </div>
     </div>
   </section>
@@ -917,7 +917,7 @@ AZURE_API_VERSION=2024-12-01-preview</pre>
       <div class="callout-stripe"></div>
       <div class="callout-body">
         <div class="callout-label">✅ Checkpoint — then close it</div>
-        <div class="callout-text">You should see AutoGen Studio with a left sidebar showing: Team Builder, Playground, Gallery, and Deployment tabs. Once you've confirmed it loads — <strong>stop it for now</strong> with <kbd>Ctrl+C</kbd> in the terminal. We will relaunch it in Step 5 <em>after</em> running the startup script, so that ChromaDB data and AutoGen Studio share the same terminal session. Launching it now and again in Step 5 from different terminals will break the data connection.</div>
+        <div class="callout-text">You should see AutoGen Studio with a left sidebar showing: Team Builder, Playground, Gallery, and Deployment tabs. Once you've confirmed it loads — <strong>stop it for now</strong> with <kbd>Ctrl+C</kbd> in the terminal. We'll relaunch it properly in Step 5 <em>after</em> running the startup script, so that ChromaDB and AutoGen Studio share the same terminal session. If you launch Studio now and again in Step 5 from different terminals, the data connection will break.</div>
       </div>
     </div>
   </section>
@@ -930,7 +930,7 @@ AZURE_API_VERSION=2024-12-01-preview</pre>
       <div><div class="step-title">AutoGen Studio — A Quick Orientation</div><div class="step-time">Read before Step 6 · Reference this during the build</div></div>
     </div>
 
-    <p>Before we write any tools or build any agents, let's get familiar with the AutoGen Studio interface. When you open <strong>http://localhost:8081</strong> you'll see four main areas in the left sidebar. Here's what each one does and when we'll use it.</p>
+    <p>Before we build any agents, let's take a few minutes to get familiar with the AutoGen Studio interface. When you open <strong>http://localhost:8081</strong> you'll see four main areas in the left sidebar. Here's what each one does and when you'll use it.</p>
 
     <div class="studio-grid">
 
@@ -1070,13 +1070,13 @@ AZURE_API_VERSION=2024-12-01-preview</pre>
       <div><div class="step-title">Step 2 — Prepare the Audio Data</div><div class="step-time">⏱ ~5 minutes · Please complete this before our session</div></div>
     </div>
 
-    <p>I've already prepared three short doctor-patient recordings for this lab — you'll download them directly into your <code>audio_files/</code> folder. The mock data script below is what we'll actually run in class; it pre-loads the transcribed content so we don't spend lab time waiting for Whisper to process audio.</p>
+    <p>I've prepared three short doctor-patient recordings for this lab — download them into your <code>audio_files/</code> folder. For our class session we'll use the mock data script below, which pre-loads the transcribed content so we don't spend lab time waiting for Whisper to process audio.</p>
 
     <div class="callout callout-tip">
       <div class="callout-stripe"></div>
       <div class="callout-body">
         <div class="callout-label">📂 Audio files download</div>
-        <div class="callout-text">Download the three audio files from the course Canvas page — they are posted in both the <strong>Week 4</strong> and <strong>Week 5</strong> modules — and place them in your <code>medical-demo/audio_files/</code> folder, keeping their original names (<code>P001_visit.mp3</code>, <code>P002_visit.mp3</code>, <code>P003_visit.mp3</code>). In class we'll use mock data to save time, but the real Whisper transcription pipeline works with these files if you want to try it on your own.</div>
+        <div class="callout-text">Download the three audio files from the course Canvas page — they are posted in both the <strong>Week 4</strong> and <strong>Week 5</strong> modules — and place them in your <code>medical-demo/audio_files/</code> folder, keeping their original names (<code>P001_visit.mp3</code>, <code>P002_visit.mp3</code>, <code>P003_visit.mp3</code>). In class we'll use mock data to save time, but the real Whisper transcription pipeline works with these files — try it on your own if you want to see the full pipeline end to end.</div>
       </div>
     </div>
 
@@ -1215,7 +1215,7 @@ python mock_transcripts.py
       <div class="step-badge">3</div>
       <div><div class="step-title">Write the Transcription Tool</div><div class="step-time">⏱ ~8 minutes</div></div>
     </div>
-    <p>Save this as <code>tools/transcription_tool.py</code>. This is the first of our three tool files. It uses Whisper to convert audio to text, then calls GPT-4.1 to extract three structured fields from the raw transcript: summary, diagnosis, and prescription. Notice how the LLM is doing structured extraction here — we'll talk about why this matters for downstream filtering.</p>
+    <p>Save this as <code>tools/transcription_tool.py</code>. This is the first of your three tool files. It uses Whisper to convert audio to text, then calls GPT-4.1 to extract three structured fields from the raw transcript: summary, diagnosis, and prescription. Notice how the LLM is doing structured extraction here — we'll come back to why this matters when we get to the ChromaDB filtering in Step 4.</p>
 
     <div class="code-wrap">
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>tools/transcription_tool.py</div>
@@ -1278,7 +1278,7 @@ python mock_transcripts.py
     <span class="f">print</span>(<span class="f">transcribe_all</span>())</pre>
     </div>
 
-    <h3>Test it now — run this from the <code>medical-demo</code> folder</h3>
+    <h3>Test it — run this from your <code>medical-demo</code> folder</h3>
     <div class="code-wrap">
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>terminal</div>
       <div class="shell-tabs">
@@ -1304,7 +1304,7 @@ python mock_transcripts.py
       <div class="callout-stripe"></div>
       <div class="callout-body">
         <div class="callout-label">✅ Checkpoint</div>
-        <div class="callout-text">Open <code>transcripts.json</code> in VS Code — you should see 3 records each with <code>patient_id</code>, <code>summary</code>, <code>diagnosis</code>, and <code>prescription</code> fields. This structured JSON is exactly what gets ingested into our vector store in the next step.</div>
+        <div class="callout-text">Open <code>transcripts.json</code> in VS Code — you should see 3 records each with <code>patient_id</code>, <code>summary</code>, <code>diagnosis</code>, and <code>prescription</code> fields. This structured JSON is exactly what gets ingested into the vector store in Step 4.</div>
       </div>
     </div>
   </section>
@@ -1315,7 +1315,7 @@ python mock_transcripts.py
       <div class="step-badge">4</div>
       <div><div class="step-title">Write the Vector Store Tool</div><div class="step-time">⏱ ~8 minutes</div></div>
     </div>
-    <p>Save as <code>tools/vector_store.py</code>. This file is the heart of the whole system. Pay attention to the <code>where</code> filter in each query function — that single parameter is what makes role-based access work. We'll discuss this as a class after running the test.</p>
+    <p>Save as <code>tools/vector_store.py</code>. This file is the heart of the whole system. Pay close attention to the <code>where</code> filter in each query function — that single parameter is what makes role-based access work. Run the test and look at what the three different query outputs tell you.</p>
 
     <div class="code-wrap">
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>tools/vector_store.py</div>
@@ -1402,7 +1402,7 @@ collection = chroma_client.<span class="f">get_or_create_collection</span>(<span
       <div class="callout-stripe"></div>
       <div class="callout-body">
         <div class="callout-label">🔑 Key concept — where filtering is your access control</div>
-        <div class="callout-text">The <code>where={"section": "prescription"}</code> filter runs inside ChromaDB before any data reaches the LLM. This is not prompt-based security — it's database-level filtering. A pharmacist's agent physically cannot retrieve diagnosis or summary text, regardless of what they ask. This is a key point I want us to discuss: <em>what's the difference between telling an LLM not to reveal something versus ensuring it never receives that data?</em></div>
+        <div class="callout-text">The <code>where={"section": "prescription"}</code> filter runs inside ChromaDB before any data reaches the LLM. This is not prompt-based security — it's database-level filtering. A pharmacist's agent physically cannot retrieve diagnosis or summary text, regardless of what they ask. Here's a question worth sitting with: <em>what's the difference between telling an LLM not to reveal something versus ensuring it never receives that data in the first place?</em></div>
       </div>
     </div>
   </section>
@@ -1413,7 +1413,7 @@ collection = chroma_client.<span class="f">get_or_create_collection</span>(<span
       <div class="step-badge">5</div>
       <div><div class="step-title">Write the Startup Script</div><div class="step-time">⏱ ~5 minutes · Run once before each class session</div></div>
     </div>
-    <p>ChromaDB runs in-memory — data resets when Python exits. This startup script initializes everything in one command. <strong>Run it once at the start of our demo session and leave the terminal open.</strong> This is the one step that catches people most often, so let's be careful here.</p>
+    <p>ChromaDB runs in-memory — data resets when Python exits. This startup script initializes everything in one command. <strong>Run it once at the start of your demo session and leave the terminal open.</strong> This is the step that trips people up most often — read the warning below before you run it.</p>
 
     <div class="code-wrap">
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>tools/startup.py</div>
@@ -1537,7 +1537,7 @@ autogenstudio ui --port 8081
       <div class="callout-stripe"></div>
       <div class="callout-body">
         <div class="callout-label">✅ Checkpoint</div>
-        <div class="callout-text">Your <strong>gpt-4.1</strong> model should appear in the Gallery under Models with a green status badge. If you see a red error, check that the endpoint URL ends with a trailing slash. Once it's green, it becomes a draggable tile in Team Builder — we'll use it in the next steps.</div>
+        <div class="callout-text">Your <strong>gpt-4.1</strong> model should appear in the Gallery under Models with a green status badge. If you see a red error, check that the endpoint URL ends with a trailing slash. Once it's green, it becomes a draggable tile in Team Builder — you'll drag it onto each agent in Steps 8 and 9.</div>
       </div>
     </div>
   </section>
@@ -1554,7 +1554,7 @@ autogenstudio ui --port 8081
       <div class="callout-stripe"></div>
       <div class="callout-body">
         <div class="callout-label">📍 Update the path</div>
-        <div class="callout-text">Update <code>sys.path.insert(0, '/path/to/your/tools')</code> to the actual absolute path of your <code>medical-demo/tools</code> folder. In VS Code you can right-click the <code>tools</code> folder in the Explorer panel and choose <strong>Copy Path</strong> to get the exact string. On Windows the path will look like: <code>C:/Users/yourname/medical-demo/tools</code> — use forward slashes even on Windows inside this string.</div>
+        <div class="callout-text">Update <code>You'll need to update <code>sys.path.insert(0, '/path/to/your/tools')</code> to the actual absolute path of your <code>medical-demo/tools</code> folder. The easiest way: in VS Code, right-click the <code>tools</code> folder in the Explorer panel and choose <strong>Copy Path</strong>. On Windows it will look like <code>C:/Users/yourname/medical-demo/tools</code> — use forward slashes even on Windows inside this string.older in the Explorer panel and choose <strong>Copy Path</strong> to get the exact string. On Windows the path will look like: <code>C:/Users/yourname/medical-demo/tools</code> — use forward slashes even on Windows inside this string.</div>
       </div>
     </div>
 
@@ -1675,7 +1675,7 @@ All records indexed and ready."</span></pre>
       <div class="callout-stripe"></div>
       <div class="callout-body">
         <div class="callout-label">✅ Checkpoint</div>
-        <div class="callout-text">Gallery → Tools should now show <strong>five tools</strong>: query_all_records, query_patient_records, query_prescriptions_only, process_audio_files, and process_mock_files. All five need to be present before building the agents.</div>
+        <div class="callout-text">Gallery → Tools should now show <strong>five tools</strong>: query_all_records, query_patient_records, query_prescriptions_only, process_audio_files, and process_mock_files. If any are missing, check that you saved them and that the code didn't throw a syntax error. You'll need all five before we move on to building the agents in Step 8.</div>
       </div>
     </div>
   </section>
@@ -1686,7 +1686,7 @@ All records indexed and ready."</span></pre>
       <div class="step-badge">8</div>
       <div><div class="step-title">Build the Four Agents in Team Builder</div><div class="step-time">⏱ ~12 minutes · In the browser</div></div>
     </div>
-    <p>Go to the <strong>Team Builder</strong> tab. This is where we build our agents visually. For each agent below: click <strong>+ New Agent</strong>, set the type to <strong>AssistantAgent</strong>, paste the system prompt I've written, drag the gpt-4.1 model tile onto it, drag the appropriate tool tile onto it, then save. We'll build all four together as a class.</p>
+    <p>Go to the <strong>Team Builder</strong> tab — this is where we assemble our agents visually. For each agent below: click <strong>+ New Agent</strong>, set the type to <strong>AssistantAgent</strong>, paste the system prompt, drag the gpt-4.1 model tile onto it, drag the appropriate tool onto it, then save.</p>
 
     <h2>Agent 0 — LabAssistantAgent &nbsp;<span class="badge badge-maroon">new</span></h2>
     <p><span class="badge badge-maroon">Tools: process_audio_files + process_mock_files</span> &nbsp; <span class="badge badge-blue">gpt-4.1</span> &nbsp; Handles file upload and ingestion before Q&amp;A begins.</p>
@@ -1844,7 +1844,7 @@ Rules:
       <div class="callout-stripe"></div>
       <div class="callout-body">
         <div class="callout-label">✅ Final checkpoint before demo</div>
-        <div class="callout-text">In Team Builder you should see <strong>MedicalRecordsTeam</strong> containing all five agents. LabAssistantAgent should show two tool badges (process_audio_files and process_mock_files). Each specialist agent should show its own tool badge. The team itself should also show a gpt-4.1 badge for the selector. Once everyone's team looks like this, we'll run the demo together as a class.</div>
+        <div class="callout-text">In Team Builder you should see <strong>MedicalRecordsTeam</strong> containing all five agents. LabAssistantAgent should show two tool badges (process_audio_files and process_mock_files). Each specialist agent should show its own tool badge. The team itself should also show a gpt-4.1 badge for the selector. Once your team looks like this, you're ready to go — let's run the demo in Step 10.</div>
       </div>
     </div>
   </section>
@@ -1855,7 +1855,7 @@ Rules:
       <div class="step-badge">10</div>
       <div><div class="step-title">Run the Demo in the Playground</div><div class="step-time">⏱ ~15 minutes · Live in class</div></div>
     </div>
-    <p>Click the <strong>Playground</strong> tab → select <strong>MedicalRecordsTeam</strong> → and we're live. Notice that the pipeline now starts with <strong>LabAssistantAgent</strong> — students trigger file ingestion themselves as the first message. I'll drive the first run on the projector, then you try each scenario. Click <strong>New Session</strong> between scenarios.</p>
+    <p>Click the <strong>Playground</strong> tab → select <strong>MedicalRecordsTeam</strong> → and you're live. Your first message triggers the LabAssistantAgent to load the data. Work through each scenario below, and click <strong>New Session</strong> between them to reset the conversation.</p>
 
     <div class="callout callout-tip">
       <div class="callout-stripe"></div>
@@ -1869,7 +1869,7 @@ Rules:
       <div class="callout-stripe"></div>
       <div class="callout-body">
         <div class="callout-label">🎭 Two-act demo structure</div>
-        <div class="callout-text"><strong>Act 1</strong> — P001, P002, P003 load instantly from mock data. Run all three role scenarios. Fast, reliable, no waiting.<br><br><strong>Act 2</strong> — Drop <code>P004_visit.mp3</code> into the <code>audio_files/</code> folder (using Finder or File Explorer — outside the browser). Tell the agent naturally. Whisper transcribes it live while you narrate. Query P004 to prove it worked.<br><br>The distinction matters: Act 1 shows the Q&A system. Act 2 shows the real ingestion pipeline. Both are genuine — neither is faked.</div>
+        <div class="callout-text"><strong>Act 1</strong> — P001, P002, P003 load instantly from mock data. Run all three role scenarios. Fast and reliable.<br><br><strong>Act 2</strong> — Drop <code>P004_visit.mp3</code> into your <code>audio_files/</code> folder (using Finder or File Explorer — outside the browser). Tell the agent about it naturally. Whisper transcribes it live. Then query P004 to confirm it worked.<br><br>Act 1 shows the Q&A system working. Act 2 shows the real ingestion pipeline — a genuine audio file being transcribed and indexed live. Neither is faked.</div>
       </div>
     </div>
 
@@ -1966,8 +1966,8 @@ Rules:
     <div class="callout callout-tip">
       <div class="callout-stripe"></div>
       <div class="callout-body">
-        <div class="callout-label">💡 Fill the Whisper wait — don't let it be dead air</div>
-        <div class="callout-text">While Whisper runs, keep talking. Open <code>transcription_tool.py</code> in VS Code and walk through what's happening — Whisper converting audio to raw text, then GPT-4.1 extracting the three structured fields. Show students the <code>extract_sections()</code> prompt. By the time you're done, P004 is ready.</div>
+        <div class="callout-label">💡 💡 What to do while Whisper runs</div>
+        <div class="callout-text">While Whisper runs (1–3 minutes), open <code>transcription_tool.py</code> in VS Code and walk through what's happening — Whisper converting the audio to raw text, then GPT-4.1 extracting the three structured fields via <code>extract_sections()</code>. By the time you've done that, P004 will be ready to query.</div>
       </div>
     </div>
 
@@ -1991,7 +1991,7 @@ Rules:
       <div class="callout-stripe"></div>
       <div class="callout-body">
         <div class="callout-label">🎯 What to say during the pharmacist refusal</div>
-        <div class="callout-text">"Notice what just happened — the pharmacist was refused access to the diagnosis. This isn't a prompt instruction saying 'don't tell pharmacists.' The retrieval tool filtered at the database level, so the LLM never received that data in the first place. There was nothing to share. This is the core design principle I want you to take away: <em>in a trustworthy AI system, access control happens at the data layer, not the language layer.</em>"</div>
+        <div class="callout-text">Notice what just happened — the pharmacist was refused access to the diagnosis. This isn't a prompt instruction saying 'don't tell pharmacists.' The retrieval tool filtered at the database level, so the LLM never received that data in the first place. There was nothing to share. This is the core design principle to take away: <em>in a trustworthy AI system, access control happens at the data layer, not the language layer.</em></div>
       </div>
     </div>
   </section>
