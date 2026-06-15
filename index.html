@@ -1122,6 +1122,24 @@ Patient: I have a home monitor. I'll track it daily.
 Doctor: Perfect. We'll review in six weeks.</pre>
         </div>
 
+        <h3>Patient P004 — Lower Back Pain &nbsp;<span class="badge badge-maroon">use this for the live demo</span></h3>
+        <p>This is the file you drop into <code>audio_files/</code> mid-demo to show a real new patient being added live. Save as <code>audio_files/P004_visit.mp3</code> — but do NOT add P004 to mock_transcripts.py. This patient should only exist as a real audio file so the Whisper transcription is genuine.</p>
+        <div class="code-wrap">
+          <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>paste into TTS tool → save as P004_visit.mp3</div>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>Doctor: Good afternoon. What brings you in today?
+Patient: I've had lower back pain for about three weeks now.
+         It gets worse when I sit for long periods.
+Doctor: I see. After examining you, I believe you have a
+         lumbar muscle strain — likely from prolonged sitting.
+         I'm prescribing Ibuprofen 400mg three times daily with food
+         and recommending physical therapy twice a week.
+Patient: Should I avoid any activities?
+Doctor: Avoid heavy lifting for now. Gentle walking is fine
+         and actually helpful. Come back in four weeks or sooner
+         if the pain worsens significantly.</pre>
+        </div>
+
         <div class="callout callout-tip" style="margin-top:16px;">
           <div class="callout-stripe"></div>
           <div class="callout-body">
@@ -1578,22 +1596,49 @@ sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s"
     <div class="code-wrap">
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>paste into AutoGen Studio → Gallery → Tools → New Tool</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-<pre><span class="k">import</span> sys
+<pre><span class="k">import</span> sys, json, whisper, os
 sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s">'/path/to/your/medical-demo/tools'</span>)
-<span class="k">from</span> transcription_tool <span class="k">import</span> transcribe_all
-<span class="k">from</span> vector_store <span class="k">import</span> ingest_transcripts
+<span class="k">from</span> transcription_tool <span class="k">import</span> extract_sections
+<span class="k">from</span> vector_store <span class="k">import</span> ingest_transcripts, collection
 
 <span class="k">def</span> <span class="f">process_audio_files</span>(audio_dir: str = <span class="s">'audio_files'</span>) -> str:
     <span class="s">"""
-    Transcribe all audio files in audio_dir using Whisper,
-    extract structured sections via GPT-4.1, embed and store
-    in ChromaDB. Call this before any patient record queries.
+    Transcribe only NEW audio files not already in ChromaDB.
+    Safe to call multiple times — skips already-indexed patients.
+    Use this when adding a new patient recording mid-session.
     """</span>
-    transcription_result = <span class="f">transcribe_all</span>(audio_dir)
-    ingestion_result = <span class="f">ingest_transcripts</span>(<span class="s">'transcripts.json'</span>)
-    <span class="k">return</span> <span class="s">f"✓ {transcription_result}
-✓ {ingestion_result}
-All records indexed and ready."</span></pre>
+    <span class="c"># Check which patients are already indexed</span>
+    existing = collection.<span class="f">get</span>()
+    indexed = <span class="f">set</span>(m[<span class="s">"patient_id"</span>] <span class="k">for</span> m <span class="k">in</span> existing[<span class="s">"metadatas"</span>])
+
+    model = whisper.<span class="f">load_model</span>(<span class="s">"base"</span>)
+    new_records = []
+
+    <span class="k">for</span> fname <span class="k">in</span> <span class="f">sorted</span>(os.<span class="f">listdir</span>(audio_dir)):
+        <span class="k">if not</span> fname.<span class="f">endswith</span>((<span class="s">'.mp3'</span>, <span class="s">'.wav'</span>)):
+            <span class="k">continue</span>
+        patient_id = fname.<span class="f">split</span>(<span class="s">'_'</span>)[<span class="n">0</span>]
+
+        <span class="k">if</span> patient_id <span class="k">in</span> indexed:
+            <span class="k">continue</span>  <span class="c"># already indexed — skip</span>
+
+        <span class="f">print</span>(<span class="s">f"New patient detected: {patient_id} — transcribing..."</span>)
+        result = model.<span class="f">transcribe</span>(os.path.<span class="f">join</span>(audio_dir, fname))
+        structured = <span class="f">extract_sections</span>(result[<span class="s">"text"</span>], patient_id)
+        new_records.<span class="f">append</span>(structured)
+
+    <span class="k">if not</span> new_records:
+        <span class="k">return</span> <span class="s">"No new files found — all patients already indexed."</span>
+
+    <span class="c"># Append to existing transcripts.json and re-ingest</span>
+    existing_data = json.<span class="f">load</span>(<span class="f">open</span>(<span class="s">'transcripts.json'</span>))
+    <span class="k">with</span> <span class="f">open</span>(<span class="s">'transcripts.json'</span>, <span class="s">'w'</span>) <span class="k">as</span> f:
+        json.<span class="f">dump</span>(existing_data + new_records, f, indent=<span class="n">2</span>)
+
+    <span class="f">ingest_transcripts</span>(<span class="s">'transcripts.json'</span>)
+    new_ids = [r[<span class="s">'patient_id'</span>] <span class="k">for</span> r <span class="k">in</span> new_records]
+    <span class="k">return</span> <span class="s">f"✓ Transcribed and indexed {len(new_records)} new patient(s): {new_ids}
+All records up to date."</span></pre>
     </div>
 
     <h3>Tool 5 — process_mock_files &nbsp;<span class="badge badge-gold">use this in class</span>&nbsp; (for LabAssistantAgent)</h3>
@@ -1814,17 +1859,26 @@ Rules:
       </div>
     </div>
 
-    <h3>Step 0 — Always start here (every session)</h3>
+    <div class="callout callout-key">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">🎭 Two-act demo structure</div>
+        <div class="callout-text"><strong>Act 1</strong> — P001, P002, P003 load instantly from mock data. Run all three role scenarios. Fast, reliable, no waiting.<br><br><strong>Act 2</strong> — Drop <code>P004_visit.mp3</code> into the <code>audio_files/</code> folder (using Finder or File Explorer — outside the browser). Tell the agent naturally. Whisper transcribes it live while you narrate. Query P004 to prove it worked.<br><br>The distinction matters: Act 1 shows the Q&A system. Act 2 shows the real ingestion pipeline. Both are genuine — neither is faked.</div>
+      </div>
+    </div>
+
+    <h2>Act 1 — Load mock data and run role scenarios</h2>
+    <h3>Step 0 — Start every session the same way</h3>
     <div class="code-wrap">
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>type this as your first message in the Playground</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-<pre>I have 3 audio files ready in the audio_files folder.</pre>
+<pre>Hi — I have recordings for three patients ready to load into the system.</pre>
     </div>
     <p>Expected flow:</p>
     <ul>
-      <li>LabAssistantAgent calls <code>process_mock_files()</code> (in class) or <code>process_audio_files()</code> (full run)</li>
-      <li>Returns: "✓ Mock transcripts loaded · ✓ Ingested 9 sections from 3 records · All records indexed and ready."</li>
-      <li>Then asks: "Are you a doctor, a patient, or a pharmacist?" — handing off to OrchestratorAgent</li>
+      <li>LabAssistantAgent calls <code>process_mock_files()</code> — completes in under 5 seconds</li>
+      <li>Returns: "Done — P001, P002, and P003 are indexed and ready."</li>
+      <li>Asks: "Are you a doctor, a patient, or a pharmacist?"</li>
     </ul>
 
     <h3>Then run the three role scenarios</h3>
@@ -1878,6 +1932,53 @@ Rules:
         </div>
       </div>
     </div>
+    </div>
+
+    <h2>Act 2 — Add a real new patient with live Whisper transcription</h2>
+
+    <p>After completing the three role scenarios, keep the Playground session open and do the following:</p>
+
+    <h3>Outside the browser — drop the file in</h3>
+    <p>Open Finder (Mac) or File Explorer (Windows) and copy <code>P004_visit.mp3</code> into your <code>medical-demo/audio_files/</code> folder. Show students the file appearing in VS Code's file explorer panel — it's sitting there unprocessed.</p>
+
+    <h3>Back in the Playground — tell the agent naturally</h3>
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>type this in the Playground chat</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>We have a new patient recording to add — P004 came in today with lower back pain.</pre>
+    </div>
+
+    <p>Expected flow:</p>
+    <ul>
+      <li>LabAssistantAgent calls <code>process_audio_files()</code> — detects P004 as new, skips P001–P003</li>
+      <li>Whisper transcribes <code>P004_visit.mp3</code> — takes 1–3 minutes on CPU</li>
+      <li>GPT-4.1 extracts summary, diagnosis, prescription from the raw transcript</li>
+      <li>ChromaDB ingests P004 alongside the existing records</li>
+      <li>Returns: "✓ Transcribed and indexed 1 new patient: P004. All records up to date."</li>
+    </ul>
+
+    <div class="callout callout-tip">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">💡 Fill the Whisper wait — don't let it be dead air</div>
+        <div class="callout-text">While Whisper runs, keep talking. Open <code>transcription_tool.py</code> in VS Code and walk through what's happening — Whisper converting audio to raw text, then GPT-4.1 extracting the three structured fields. Show students the <code>extract_sections()</code> prompt. By the time you're done, P004 is ready.</div>
+      </div>
+    </div>
+
+    <h3>Prove it worked — query P004 as a doctor</h3>
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>type in Playground after ingestion completes</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>What did the doctor prescribe for patient P004?</pre>
+    </div>
+    <p>DoctorAgent should return P004's prescription — Ibuprofen 400mg — pulled from the freshly transcribed and indexed record. This closes the loop: students just watched a real audio file become a queryable medical record in front of them.</p>
+
+    <div class="callout callout-check">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">✅ What this demo proves</div>
+        <div class="callout-text">P004 was never in <code>mock_transcripts.py</code> — it only existed as an audio file. The system transcribed it, structured it, indexed it, and made it queryable, all triggered by a natural conversation message. That's the full pipeline working end to end.</div>
+      </div>
     </div>
 
     <div class="callout callout-key">
