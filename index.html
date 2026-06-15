@@ -616,10 +616,9 @@
     <a class="nav-link" href="#step3"><span class="step-num">3</span>Transcription Tool</a>
     <a class="nav-link" href="#step4"><span class="step-num">4</span>Vector Store Tool</a>
     <a class="nav-link" href="#step5"><span class="step-num">5</span>Startup Script</a>
-    <a class="nav-link" href="#step6"><span class="step-num">6</span>Register Azure Model</a>
-    <a class="nav-link" href="#step7"><span class="step-num">7</span>Register Tools in Studio</a>
-    <a class="nav-link" href="#step8"><span class="step-num">8</span>Build the Agents (5)</a>
-    <a class="nav-link" href="#step9"><span class="step-num">9</span>Assemble the Team</a>
+    <a class="nav-link" href="#step6"><span class="step-num">6</span>Register Tools</a>
+    <a class="nav-link" href="#step7"><span class="step-num">7</span>Build Team from Template</a>
+    <a class="nav-link" href="#step8"><span class="step-num">8</span>Build the Five Agents</a>
 
     <div class="nav-section-label">What's Next</div>
     <a class="nav-link" href="deployment-guide.html"><span class="step-num">→</span>Deployment Guide</a>
@@ -902,16 +901,30 @@ AZURE_API_VERSION=2024-12-01-preview</pre>
       </div>
       <div id="mac-57148" class="shell-pane">
         <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-<pre>autogenstudio ui --port 8081</pre>
+<pre>autogenstudio ui --port 8081 --database-uri sqlite:///$(pwd)/lab_demo.db</pre>
       </div>
       <div id="ps-57148" class="shell-pane active">
         <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-<pre>autogenstudio ui --port 8081
+<pre>autogenstudio ui --port 8081 --database-uri "sqlite:///$PWD/lab_demo.db"
 
 <span class="c"># Same command — works identically in PowerShell</span></pre>
       </div>
     </div>
-    <p>Open your browser → <strong>http://localhost:8081</strong></p>
+    <p>AutoGen Studio does <strong>not</strong> open a browser automatically — it just starts a local web server and waits. Watch the terminal for this message:</p>
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>expected terminal output — wait for this before opening the browser</div>
+<pre><span class="c">INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8081 (Press CTRL+C to quit)</span></pre>
+    </div>
+    <p>Once you see that, open your browser manually and go to <strong>http://localhost:8081</strong></p>
+
+    <div class="callout callout-tip">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">💡 Why the --database-uri flag?</div>
+        <div class="callout-text">AutoGen Studio saves everything — agents, tools, teams, models — to a local database. If you've used AutoGen Studio before, your existing agents will appear alongside the ones you create in this lab. The <code>--database-uri sqlite:///lab_demo.db</code> flag creates a separate isolated database just for this lab, so you start with a clean slate without losing your existing work. Use this same flag every time you launch Studio for this lab.</div>
+      </div>
+    </div>
 
     <div class="callout callout-check">
       <div class="callout-stripe"></div>
@@ -1457,7 +1470,7 @@ python startup.py
 # 🚀 Demo ready! Launch AutoGen Studio in this same terminal.</span>
 
 <span class="c"># Then in the SAME terminal window:</span>
-autogenstudio ui --port 8081</pre>
+autogenstudio ui --port 8081 --database-uri sqlite:///$(pwd)/../lab_demo.db</pre>
       </div>
       <div id="ps-90" class="shell-pane">
         <button class="copy-btn" onclick="copyCode(this)">Copy</button>
@@ -1468,7 +1481,7 @@ python startup.py
 # 🚀 Demo ready! Launch AutoGen Studio in this same terminal.</span>
 
 <span class="c"># Then in the SAME PowerShell terminal — do NOT open a new one:</span>
-autogenstudio ui --port 8081
+autogenstudio ui --port 8081 --database-uri "sqlite:///$PWD/../lab_demo.db"
 
 <span class="c"># VS Code tip: use the integrated terminal (Ctrl+`) and keep it open</span></pre>
       </div>
@@ -1504,63 +1517,22 @@ autogenstudio ui --port 8081
   <section class="section" id="step6">
     <div class="step-header">
       <div class="step-badge">6</div>
-      <div><div class="step-title">Register Your Azure Model in AutoGen Studio</div><div class="step-time">⏱ ~5 minutes · In the browser</div></div>
-    </div>
-    <p>Open <strong>http://localhost:8081</strong> in your browser. We're now in AutoGen Studio — everything from here is drag-and-drop. The first thing we need to do is register our Azure model so it appears as a component in the library.</p>
-
-    <ol>
-      <li>Click <strong>Gallery</strong> in the left sidebar</li>
-      <li>Click <strong>Models</strong> in the top navigation within Gallery</li>
-      <li>Click <strong>+ New Model</strong> (top right)</li>
-      <li>Fill in the form:</li>
-    </ol>
-
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr><th>Field</th><th>Value</th></tr></thead>
-        <tbody>
-          <tr><td><strong>Model Type</strong></td><td>Azure OpenAI</td></tr>
-          <tr><td><strong>Model Name</strong></td><td>gpt-4.1 <em>(must match your deployment name exactly)</em></td></tr>
-          <tr><td><strong>Base URL</strong></td><td>https://your-resource.openai.azure.com/ <em>(include trailing slash)</em></td></tr>
-          <tr><td><strong>API Key</strong></td><td>Your Azure OpenAI key from .env</td></tr>
-          <tr><td><strong>API Version</strong></td><td>2024-12-01-preview</td></tr>
-        </tbody>
-      </table>
+      <div><div class="step-title">Register Your Python Tools in AutoGen Studio</div><div class="step-time">⏱ ~10 minutes · In the browser</div></div>
     </div>
 
-    <ol start="5">
-      <li>Click <strong>Test Connection</strong> — you should see a green checkmark</li>
-      <li>Click <strong>Save</strong></li>
-    </ol>
-
-    <div class="callout callout-check">
-      <div class="callout-stripe"></div>
-      <div class="callout-body">
-        <div class="callout-label">✅ Checkpoint</div>
-        <div class="callout-text">Your <strong>gpt-4.1</strong> model should appear in the Gallery under Models with a green status badge. If you see a red error, check that the endpoint URL ends with a trailing slash. Once it's green, it becomes a draggable tile in Team Builder — you'll drag it onto each agent in Steps 8 and 9.</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Step 7 -->
-  <section class="section" id="step7">
-    <div class="step-header">
-      <div class="step-badge">7</div>
-      <div><div class="step-title">Register Your Python Tools in AutoGen Studio</div><div class="step-time">⏱ ~8 minutes · In the browser</div></div>
-    </div>
-    <p>Go to <strong>Gallery → Tools → + New Tool</strong> for each of the three tools below. These are the Python functions our agents will call when they need to retrieve records. Paste each one into the Studio code editor, name it, and save. Once saved, each tool becomes a draggable tile in the component library — you'll drag them onto agents in Step 8.</p>
+    <p>Open <strong>http://localhost:8081</strong> in your browser. We'll start by registering the Python tool functions in AutoGen Studio's Gallery so they become available to attach to agents. Go to <strong>Gallery → Tools → + New Tool</strong> for each tool below — paste the code, name it, and save.</p>
 
     <div class="callout callout-tip">
       <div class="callout-stripe"></div>
       <div class="callout-body">
-        <div class="callout-label">📍 Update the path</div>
-        <div class="callout-text">Update <code>You'll need to update <code>sys.path.insert(0, '/path/to/your/tools')</code> to the actual absolute path of your <code>medical-demo/tools</code> folder. The easiest way: in VS Code, right-click the <code>tools</code> folder in the Explorer panel and choose <strong>Copy Path</strong>. On Windows it will look like <code>C:/Users/yourname/medical-demo/tools</code> — use forward slashes even on Windows inside this string.older in the Explorer panel and choose <strong>Copy Path</strong> to get the exact string. On Windows the path will look like: <code>C:/Users/yourname/medical-demo/tools</code> — use forward slashes even on Windows inside this string.</div>
+        <div class="callout-label">📍 Update the path in every tool</div>
+        <div class="callout-text">Each tool needs <code>sys.path.insert(0, '/path/to/your/medical-demo/tools')</code> updated to your actual folder path. In VS Code, right-click the <code>tools</code> folder in the Explorer panel and choose <strong>Copy Path</strong>. On Windows it will look like <code>C:/Users/yourname/medical-demo/tools</code> — use forward slashes even on Windows.</div>
       </div>
     </div>
 
     <h3>Tool 1 — query_all_records (for DoctorAgent)</h3>
     <div class="code-wrap">
-      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>paste into AutoGen Studio → Gallery → Tools → New Tool</div>
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>Gallery → Tools → + New Tool</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
 <pre><span class="k">import</span> sys
 sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s">'/path/to/your/medical-demo/tools'</span>)
@@ -1573,7 +1545,7 @@ sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s"
 
     <h3>Tool 2 — query_patient_records (for PatientAgent)</h3>
     <div class="code-wrap">
-      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>paste into AutoGen Studio → Gallery → Tools → New Tool</div>
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>Gallery → Tools → + New Tool</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
 <pre><span class="k">import</span> sys
 sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s">'/path/to/your/medical-demo/tools'</span>)
@@ -1586,7 +1558,7 @@ sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s"
 
     <h3>Tool 3 — query_prescriptions_only (for PharmacistAgent)</h3>
     <div class="code-wrap">
-      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>paste into AutoGen Studio → Gallery → Tools → New Tool</div>
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>Gallery → Tools → + New Tool</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
 <pre><span class="k">import</span> sys
 sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s">'/path/to/your/medical-demo/tools'</span>)
@@ -1597,10 +1569,9 @@ sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s"
     <span class="k">return</span> <span class="f">query_prescriptions</span>(question)</pre>
     </div>
 
-    <h3>Tool 4 — process_audio_files &nbsp;<span class="badge badge-maroon">new</span>&nbsp; (for LabAssistantAgent)</h3>
-    <p>This is the tool that makes the full pipeline visible inside the Playground. It runs Whisper transcription <em>and</em> ChromaDB ingestion in one agent action — you'll be able to watch the whole thing happen live.</p>
+    <h3>Tool 4 — process_audio_files (for LabAssistantAgent)</h3>
     <div class="code-wrap">
-      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>paste into AutoGen Studio → Gallery → Tools → New Tool</div>
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>Gallery → Tools → + New Tool</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
 <pre><span class="k">import</span> sys, json, whisper, os
 sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s">'/path/to/your/medical-demo/tools'</span>)
@@ -1608,49 +1579,28 @@ sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s"
 <span class="k">from</span> vector_store <span class="k">import</span> ingest_transcripts, collection
 
 <span class="k">def</span> <span class="f">process_audio_files</span>(audio_dir: str = <span class="s">'audio_files'</span>) -> str:
-    <span class="s">"""
-    Transcribe only NEW audio files not already in ChromaDB.
-    Safe to call multiple times — skips already-indexed patients.
-    Use this when adding a new patient recording mid-session.
-    """</span>
-    <span class="c"># Check which patients are already indexed</span>
+    <span class="s">"""Transcribe only NEW audio files not already in ChromaDB. Safe to call multiple times."""</span>
     existing = collection.<span class="f">get</span>()
     indexed = <span class="f">set</span>(m[<span class="s">"patient_id"</span>] <span class="k">for</span> m <span class="k">in</span> existing[<span class="s">"metadatas"</span>])
-
     model = whisper.<span class="f">load_model</span>(<span class="s">"base"</span>)
     new_records = []
-
     <span class="k">for</span> fname <span class="k">in</span> <span class="f">sorted</span>(os.<span class="f">listdir</span>(audio_dir)):
-        <span class="k">if not</span> fname.<span class="f">endswith</span>((<span class="s">'.mp3'</span>, <span class="s">'.wav'</span>)):
-            <span class="k">continue</span>
+        <span class="k">if not</span> fname.<span class="f">endswith</span>((<span class="s">'.mp3'</span>, <span class="s">'.wav'</span>)): <span class="k">continue</span>
         patient_id = fname.<span class="f">split</span>(<span class="s">'_'</span>)[<span class="n">0</span>]
-
-        <span class="k">if</span> patient_id <span class="k">in</span> indexed:
-            <span class="k">continue</span>  <span class="c"># already indexed — skip</span>
-
-        <span class="f">print</span>(<span class="s">f"New patient detected: {patient_id} — transcribing..."</span>)
+        <span class="k">if</span> patient_id <span class="k">in</span> indexed: <span class="k">continue</span>
         result = model.<span class="f">transcribe</span>(os.path.<span class="f">join</span>(audio_dir, fname))
-        structured = <span class="f">extract_sections</span>(result[<span class="s">"text"</span>], patient_id)
-        new_records.<span class="f">append</span>(structured)
-
-    <span class="k">if not</span> new_records:
-        <span class="k">return</span> <span class="s">"No new files found — all patients already indexed."</span>
-
-    <span class="c"># Append to existing transcripts.json and re-ingest</span>
+        new_records.<span class="f">append</span>(<span class="f">extract_sections</span>(result[<span class="s">"text"</span>], patient_id))
+    <span class="k">if not</span> new_records: <span class="k">return</span> <span class="s">"No new files found."</span>
     existing_data = json.<span class="f">load</span>(<span class="f">open</span>(<span class="s">'transcripts.json'</span>))
     <span class="k">with</span> <span class="f">open</span>(<span class="s">'transcripts.json'</span>, <span class="s">'w'</span>) <span class="k">as</span> f:
         json.<span class="f">dump</span>(existing_data + new_records, f, indent=<span class="n">2</span>)
-
     <span class="f">ingest_transcripts</span>(<span class="s">'transcripts.json'</span>)
-    new_ids = [r[<span class="s">'patient_id'</span>] <span class="k">for</span> r <span class="k">in</span> new_records]
-    <span class="k">return</span> <span class="s">f"✓ Transcribed and indexed {len(new_records)} new patient(s): {new_ids}
-All records up to date."</span></pre>
+    <span class="k">return</span> <span class="s">f"✓ Transcribed and indexed {len(new_records)} new patient(s): {[r['patient_id'] for r in new_records]}"</span></pre>
     </div>
 
-    <h3>Tool 5 — process_mock_files &nbsp;<span class="badge badge-gold">use this in class</span>&nbsp; (for LabAssistantAgent)</h3>
-    <p>Same as above but skips Whisper entirely — uses the pre-written mock data. Completes in under 5 seconds. Use this during the live class demo so the agent responds quickly.</p>
+    <h3>Tool 5 — process_mock_files &nbsp;<span class="badge badge-gold">use this in class</span></h3>
     <div class="code-wrap">
-      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>paste into AutoGen Studio → Gallery → Tools → New Tool</div>
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>Gallery → Tools → + New Tool</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
 <pre><span class="k">import</span> sys, json
 sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s">'/path/to/your/medical-demo/tools'</span>)
@@ -1658,16 +1608,12 @@ sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s"
 <span class="k">from</span> vector_store <span class="k">import</span> ingest_transcripts
 
 <span class="k">def</span> <span class="f">process_mock_files</span>() -> str:
-    <span class="s">"""
-    Load pre-written mock transcripts and ingest into ChromaDB.
-    Use this in class instead of process_audio_files to skip
-    Whisper processing time. Produces identical output structure.
-    """</span>
+    <span class="s">"""Load pre-written mock transcripts and ingest into ChromaDB. Use in class to skip Whisper."""</span>
     <span class="k">with</span> <span class="f">open</span>(<span class="s">'transcripts.json'</span>, <span class="s">'w'</span>) <span class="k">as</span> f:
         json.<span class="f">dump</span>(MOCK_DATA, f, indent=<span class="n">2</span>)
-    ingestion_result = <span class="f">ingest_transcripts</span>(<span class="s">'transcripts.json'</span>)
-    <span class="k">return</span> <span class="s">f"✓ Mock transcripts loaded (3 patients: P001, P002, P003)
-✓ {ingestion_result}
+    result = <span class="f">ingest_transcripts</span>(<span class="s">'transcripts.json'</span>)
+    <span class="k">return</span> <span class="s">f"✓ Mock transcripts loaded (P001, P002, P003)
+✓ {result}
 All records indexed and ready."</span></pre>
     </div>
 
@@ -1675,35 +1621,123 @@ All records indexed and ready."</span></pre>
       <div class="callout-stripe"></div>
       <div class="callout-body">
         <div class="callout-label">✅ Checkpoint</div>
-        <div class="callout-text">Gallery → Tools should now show <strong>five tools</strong>: query_all_records, query_patient_records, query_prescriptions_only, process_audio_files, and process_mock_files. If any are missing, check that you saved them and that the code didn't throw a syntax error. You'll need all five before we move on to building the agents in Step 8.</div>
+        <div class="callout-text">Gallery → Tools should now show all five tools: query_all_records, query_patient_records, query_prescriptions_only, process_audio_files, and process_mock_files. You'll need all five present before moving on to Step 7.</div>
       </div>
     </div>
+  </section>
+
+  <!-- Step 7 -->
+  <section class="section" id="step7">
+    <div class="step-header">
+      <div class="step-badge">7</div>
+      <div><div class="step-title">Build the Team from the Selector Template</div><div class="step-time">⏱ ~5 minutes · In the browser</div></div>
+    </div>
+
+    <p>Rather than building from scratch, we'll use the <strong>Selector Team</strong> template that ships with AutoGen Studio. It already has SelectorGroupChat configured — we just swap out the agents, update the model to Azure, and set our selector prompt.</p>
+
+    <ol>
+      <li>In Team Builder, click the <strong>From Gallery</strong> tab</li>
+      <li>Click <strong>Selector Team</strong> → click <strong>Use</strong> or <strong>Open in Team Builder</strong></li>
+      <li>Rename the team to <strong>MedicalRecordsTeam</strong> by clicking the team name at the top</li>
+      <li>Delete the two default placeholder agents — click each agent node → click the delete (trash) icon</li>
+    </ol>
+
+    <div class="callout callout-tip">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">💡 Why start from the template?</div>
+        <div class="callout-text">The current AutoGen Studio UI doesn't offer a team-type dropdown when you click + New Team — it always creates a RoundRobinGroupChat by default. The Selector Team template is already configured as a SelectorGroupChat, which is exactly what we need for role-based routing. Starting from it saves you editing JSON to change the team type.</div>
+      </div>
+    </div>
+
+    <h3>Update the model to Azure AI Foundry</h3>
+    <p>The template comes with a default OpenAI model. We need to update it to point to your Azure deployment. Click the <strong>model node</strong> on the team canvas → click the <strong>edit (pencil) icon</strong> → you'll see a JSON config panel. Replace the entire model config with this:</p>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>paste into the model node JSON editor</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>{
+  <span class="s">"provider"</span>: <span class="s">"autogen_ext.models.azure.AzureOpenAIChatCompletionClient"</span>,
+  <span class="s">"component_type"</span>: <span class="s">"model"</span>,
+  <span class="s">"version"</span>: <span class="n">1</span>,
+  <span class="s">"component_version"</span>: <span class="n">1</span>,
+  <span class="s">"label"</span>: <span class="s">"AzureOpenAIChatCompletionClient"</span>,
+  <span class="s">"config"</span>: {
+    <span class="s">"model"</span>: <span class="s">"gpt-4.1"</span>,
+    <span class="s">"azure_deployment"</span>: <span class="s">"gpt-4.1"</span>,
+    <span class="s">"azure_endpoint"</span>: <span class="s">"https://your-resource.openai.azure.com/"</span>,
+    <span class="s">"api_version"</span>: <span class="s">"2024-12-01-preview"</span>,
+    <span class="s">"api_key"</span>: <span class="s">"your-azure-api-key"</span>
+  }
+}</pre>
+    </div>
+
+    <p>Replace <code>your-resource</code> with your actual Azure resource name, and <code>your-azure-api-key</code> with your key from the <code>.env</code> file. The <code>azure_deployment</code> and <code>model</code> values must both match your deployment name exactly. Click <strong>Save</strong>.</p>
+
+    <div class="callout callout-warn">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">⚠️ Azure model config requires JSON editing</div>
+        <div class="callout-text">The AutoGen Studio UI doesn't have a form for Azure models — you have to edit the JSON directly. This is the one unavoidable JSON edit in the whole lab. Everything else is drag-and-drop from here.</div>
+      </div>
+    </div>
+
+    <h3>Update the selector prompt</h3>
+    <p>Click the <strong>team node</strong> → click the <strong>edit icon</strong> → find the <strong>Selector Prompt</strong> field and replace it with this:</p>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>Selector Prompt — paste into team node editor</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>You are routing messages in a medical records system.
+
+Rules:
+0. If files have not yet been processed, or the user mentions uploading audio
+   files or a folder path, select LabAssistantAgent first.
+1. OrchestratorAgent speaks after LabAssistantAgent confirms processing is done,
+   OR first if the user jumps straight to a query without mentioning files.
+2. After role is confirmed:
+   - DOCTOR      → select DoctorAgent
+   - PATIENT     → select PatientAgent
+   - PHARMACIST  → select PharmacistAgent
+3. Once a role is confirmed, keep the same specialist agent for follow-up questions.
+4. If the user asks something outside their role's scope, select OrchestratorAgent to redirect.
+5. LabAssistantAgent never answers medical questions — route immediately to OrchestratorAgent.</pre>
+    </div>
+
+    <p>Also set <strong>Max Turns</strong> to <strong>20</strong> in the team node editor. Click <strong>Save</strong>.</p>
   </section>
 
   <!-- Step 8 -->
   <section class="section" id="step8">
     <div class="step-header">
       <div class="step-badge">8</div>
-      <div><div class="step-title">Build the Four Agents in Team Builder</div><div class="step-time">⏱ ~12 minutes · In the browser</div></div>
+      <div><div class="step-title">Build and Add Your Five Agents</div><div class="step-time">⏱ ~15 minutes · In the browser</div></div>
     </div>
-    <p>Go to the <strong>Team Builder</strong> tab — this is where we assemble our agents visually. For each agent below: click <strong>+ New Agent</strong>, set the type to <strong>AssistantAgent</strong>, paste the system prompt, drag the gpt-4.1 model tile onto it, drag the appropriate tool onto it, then save.</p>
 
-    <h2>Agent 0 — LabAssistantAgent &nbsp;<span class="badge badge-maroon">new</span></h2>
-    <p><span class="badge badge-maroon">Tools: process_audio_files + process_mock_files</span> &nbsp; <span class="badge badge-blue">gpt-4.1</span> &nbsp; Handles file upload and ingestion before Q&amp;A begins.</p>
+    <p>Now we build each agent and add it to the team. For each agent below: click <strong>+ Add Agent</strong> in the team canvas (or drag an AssistantAgent from the component library) → click the agent's <strong>edit icon</strong> → set the name and system prompt → drag the appropriate tool onto the agent's tool drop zone → drag the Azure model onto the agent's model drop zone → save.</p>
+
+    <div class="callout callout-tip">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">💡 Editing agent properties</div>
+        <div class="callout-text">Click the <strong>edit (pencil) icon</strong> on the top right of each agent node to open its properties panel. You'll see fields for name, description, and system message. For the model and tools, use the drop zones on the agent node itself — drag from the component library on the left sidebar.</div>
+      </div>
+    </div>
+
+    <h2>Agent 0 — LabAssistantAgent</h2>
+    <p><span class="badge badge-maroon">Tools: process_audio_files + process_mock_files</span> &nbsp; <span class="badge badge-blue">Azure gpt-4.1</span></p>
     <div class="code-wrap">
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>System Prompt — LabAssistantAgent</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
 <pre>You are the Lab Assistant for a medical records AI system.
 Your sole job is to process audio files before any queries are answered.
 
-When a user says they have audio files ready, or provides a folder path,
-call process_audio_files with that path.
+When the user mentions loading, adding, uploading, or processing any recordings,
+files, or patient data — in any phrasing — call process_mock_files() automatically.
+Never ask the user to specify a function or folder name.
+Confirm what you did after it completes.
 
-During class demos, call process_mock_files instead — it produces
-identical results without the Whisper processing delay.
-
-After processing completes, report back exactly what was indexed, then say:
-"The system is now ready. Are you a doctor, a patient, or a pharmacist?"
+For a real new audio file (Act 2 demo), call process_audio_files() instead.
 
 You do NOT answer medical questions.
 You do NOT retrieve patient records.
@@ -1711,7 +1745,7 @@ Once processing is confirmed, hand all subsequent messages to OrchestratorAgent.
     </div>
 
     <h2>Agent 1 — OrchestratorAgent</h2>
-    <p><span class="badge badge-maroon">No tools</span> &nbsp; <span class="badge badge-blue">gpt-4.1</span> &nbsp; This agent only talks — it never retrieves data itself.</p>
+    <p><span class="badge badge-maroon">No tools</span> &nbsp; <span class="badge badge-blue">Azure gpt-4.1</span></p>
     <div class="code-wrap">
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>System Prompt — OrchestratorAgent</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
@@ -1742,7 +1776,7 @@ Never skip the role check. Never answer medical questions yourself.</pre>
     </div>
 
     <h2>Agent 2 — DoctorAgent</h2>
-    <p><span class="badge badge-green">Tool: query_all_records</span> &nbsp; <span class="badge badge-blue">gpt-4.1</span></p>
+    <p><span class="badge badge-green">Tool: query_all_records</span> &nbsp; <span class="badge badge-blue">Azure gpt-4.1</span></p>
     <div class="code-wrap">
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>System Prompt — DoctorAgent</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
@@ -1759,7 +1793,7 @@ Format responses with clear patient ID labels like [Patient P001].</pre>
     </div>
 
     <h2>Agent 3 — PatientAgent</h2>
-    <p><span class="badge badge-gold">Tool: query_patient_records</span> &nbsp; <span class="badge badge-blue">gpt-4.1</span></p>
+    <p><span class="badge badge-gold">Tool: query_patient_records</span> &nbsp; <span class="badge badge-blue">Azure gpt-4.1</span></p>
     <div class="code-wrap">
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>System Prompt — PatientAgent</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
@@ -1781,7 +1815,7 @@ If asked about other patients, say:
     </div>
 
     <h2>Agent 4 — PharmacistAgent</h2>
-    <p><span class="badge badge-purple">Tool: query_prescriptions_only</span> &nbsp; <span class="badge badge-blue">gpt-4.1</span></p>
+    <p><span class="badge badge-purple">Tool: query_prescriptions_only</span> &nbsp; <span class="badge badge-blue">Azure gpt-4.1</span></p>
     <div class="code-wrap">
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>System Prompt — PharmacistAgent</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
@@ -1800,51 +1834,12 @@ physician for clinical details."
 
 Use query_prescriptions_only for all queries.</pre>
     </div>
-  </section>
-
-  <!-- Step 9 -->
-  <section class="section" id="step9">
-    <div class="step-header">
-      <div class="step-badge">9</div>
-      <div><div class="step-title">Assemble the Team in Team Builder</div><div class="step-time">⏱ ~8 minutes · In the browser</div></div>
-    </div>
-
-    <ol>
-      <li>In Team Builder click <strong>+ New Team</strong></li>
-      <li>Name it <strong>MedicalRecordsTeam</strong></li>
-      <li>Set team type to <strong>SelectorGroupChat</strong> (this lets the routing LLM pick which agent speaks next)</li>
-      <li>Drag all four agents from the component library into the team's agent drop zone</li>
-      <li>Drag your <strong>gpt-4.1</strong> model onto the <em>team's</em> model drop zone (the selector needs its own model)</li>
-      <li>Paste the selector prompt below into the <strong>Selector Prompt</strong> field</li>
-      <li>Drag a <strong>MaxMessageTermination</strong> condition into the team — set to <strong>20</strong> messages</li>
-      <li>Click <strong>Save Team</strong></li>
-    </ol>
-
-    <h3>Selector Prompt (paste into the team)</h3>
-    <div class="code-wrap">
-      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>SelectorGroupChat — Selector Prompt</div>
-      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-<pre>You are routing messages in a medical records system.
-
-Rules:
-0. If files have not yet been processed, or the user mentions uploading audio
-   files or a folder path, select LabAssistantAgent first.
-1. OrchestratorAgent speaks after LabAssistantAgent confirms processing is done,
-   OR first if the user jumps straight to a query without mentioning files.
-2. After role is confirmed:
-   - DOCTOR      → select DoctorAgent
-   - PATIENT     → select PatientAgent
-   - PHARMACIST  → select PharmacistAgent
-3. Once a role is confirmed, keep the same specialist agent for follow-up questions.
-4. If the user asks something outside their role's scope, select OrchestratorAgent to redirect.
-5. LabAssistantAgent never answers medical questions — if it receives one, route immediately to OrchestratorAgent.</pre>
-    </div>
 
     <div class="callout callout-check">
       <div class="callout-stripe"></div>
       <div class="callout-body">
         <div class="callout-label">✅ Final checkpoint before demo</div>
-        <div class="callout-text">In Team Builder you should see <strong>MedicalRecordsTeam</strong> containing all five agents. LabAssistantAgent should show two tool badges (process_audio_files and process_mock_files). Each specialist agent should show its own tool badge. The team itself should also show a gpt-4.1 badge for the selector. Once your team looks like this, you're ready to go — let's run the demo in Step 10.</div>
+        <div class="callout-text">Your <strong>MedicalRecordsTeam</strong> canvas should show five agent nodes — LabAssistantAgent (two tools), OrchestratorAgent (no tools), DoctorAgent (query_all_records), PatientAgent (query_patient_records), and PharmacistAgent (query_prescriptions_only). Each agent should have the Azure gpt-4.1 model attached. Once it looks like this, you're ready — let's run the demo in Step 9.</div>
       </div>
     </div>
   </section>
@@ -1944,7 +1939,70 @@ Rules:
 
     <p>After completing the three role scenarios, keep the Playground session open and do the following:</p>
 
-    <h3>Outside the browser — drop the file in</h3>
+    <h3>Before Act 2 — create your P004_visit.mp3 audio file</h3>
+
+    <div class="callout callout-warn">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">⚠️ Prepare this before class</div>
+        <div class="callout-text">You need a real <code>P004_visit.mp3</code> file for this demo — do not add P004 to <code>mock_transcripts.py</code>. It must only exist as an audio file so the Whisper transcription is genuine. Generate it using a free TTS tool such as <a href="https://ttsmp3.com" target="_blank">ttsmp3.com</a> (paste the script below, click Read, download, rename to <code>P004_visit.mp3</code>) or the macOS <code>say</code> command. Place it in your <code>audio_files/</code> folder before class.</div>
+      </div>
+    </div>
+
+    <h3>P004 audio script — paste into your TTS tool</h3>
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>paste into ttsmp3.com or ElevenLabs → download → rename to P004_visit.mp3</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>Doctor: Good afternoon. What brings you in today?
+Patient: I've had lower back pain for about three weeks now.
+         It gets worse when I sit for long periods.
+Doctor: After examining you, I believe you have a lumbar muscle
+         strain — likely from prolonged sitting.
+         I'm prescribing Ibuprofen 400mg three times daily with food
+         and recommending physical therapy twice a week.
+Patient: Should I avoid any activities?
+Doctor: Avoid heavy lifting for now. Gentle walking is fine
+         and actually helpful. Come back in four weeks or sooner
+         if the pain worsens significantly.</pre>
+    </div>
+
+    <details class="sidebar-accordion">
+      <summary>
+        <span class="sidebar-icon">💻</span>
+        <span class="sidebar-title">Sidebar — Generate audio from the terminal (no browser needed)</span>
+        <span class="sidebar-chevron">▸</span>
+      </summary>
+      <div class="sidebar-body">
+        <h3>Mac — built-in say command</h3>
+        <div class="code-wrap">
+          <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>terminal — Mac only</div>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>say -v Alex -o P004_visit.aiff \
+"Doctor: Good afternoon. What brings you in today? \
+Patient: I have had lower back pain for about three weeks. \
+Doctor: I believe you have a lumbar muscle strain. \
+I am prescribing Ibuprofen 400mg three times daily with food \
+and recommending physical therapy twice a week. \
+Patient: Should I avoid any activities? \
+Doctor: Avoid heavy lifting. Gentle walking is fine. Come back in four weeks."
+
+ffmpeg -i P004_visit.aiff audio_files/P004_visit.mp3</pre>
+        </div>
+        <h3>Windows — PowerShell built-in TTS</h3>
+        <div class="code-wrap">
+          <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>PowerShell (VS Code)</div>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>Add-Type -AssemblyName System.Speech
+$synth = New-Object System.Speech.Synthesis.SpeechSynthesizer
+$synth.SetOutputToWaveFile("audio_files\P004_visit.wav")
+$synth.Speak("Doctor: Good afternoon. What brings you in today? Patient: I have had lower back pain for three weeks. Doctor: I believe you have a lumbar muscle strain. I am prescribing Ibuprofen 400mg three times daily with food. Come back in four weeks.")
+$synth.Dispose()
+<span class="c"># Then convert P004_visit.wav to .mp3 using any free converter</span></pre>
+        </div>
+      </div>
+    </details>
+
+    <h3>Now drop the file into your folder</h3>
     <p>Open Finder (Mac) or File Explorer (Windows) and copy <code>P004_visit.mp3</code> into your <code>medical-demo/audio_files/</code> folder. You can see it appear in VS Code's file explorer panel on the left — it's sitting there unprocessed, just an audio file with no record in the system yet.</p>
 
     <h3>Back in the Playground — tell the agent naturally</h3>
@@ -1977,7 +2035,7 @@ Rules:
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
 <pre>What did the doctor prescribe for patient P004?</pre>
     </div>
-    <p>DoctorAgent should return P004's prescription — Ibuprofen 400mg — pulled from the freshly transcribed and indexed record. This closes the loop: students just watched a real audio file become a queryable medical record in front of them.</p>
+    <p>DoctorAgent should return P004's prescription — Ibuprofen 400mg — pulled from the freshly transcribed and indexed record. This closes the loop: a real audio file just became a queryable medical record, triggered by nothing more than a natural conversation message.</p>
 
     <div class="callout callout-check">
       <div class="callout-stripe"></div>
