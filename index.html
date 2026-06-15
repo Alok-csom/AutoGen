@@ -1292,6 +1292,13 @@ python mock_transcripts.py
     </div>
 
     <h3>Test it — run this from your <code>medical-demo</code> folder</h3>
+    <div class="callout callout-warn">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">⚠️ Run from medical-demo, not from tools/</div>
+        <div class="callout-text">The script looks for <code>audio_files/</code> relative to wherever you run it from. Always run it from the <code>medical-demo/</code> folder — not from inside <code>tools/</code>. If you get a <strong>FileNotFoundError: audio_files</strong> it means you're in the wrong folder.</div>
+      </div>
+    </div>
     <div class="code-wrap">
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>terminal</div>
       <div class="shell-tabs">
@@ -2061,24 +2068,64 @@ $synth.Dispose()
       <div><div class="step-title">Troubleshooting</div><div class="step-time">Common issues &amp; fixes</div></div>
     </div>
 
+    <h2>ffmpeg not found (Windows) — fix this first</h2>
+    <p>If you see a <code>FileNotFoundError: [WinError 2] The system cannot find the file specified</code> error when running the transcription tool, Whisper can't find <code>ffmpeg</code> — it needs it to decode <code>.mp3</code> files. Install it with one of these:</p>
+
+    <h3>Option A — winget (recommended, built into Windows 10/11)</h3>
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>PowerShell (VS Code) — run as Administrator</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>winget install ffmpeg</pre>
+    </div>
+    <p>After installing, <strong>close and reopen your PowerShell terminal</strong> so it picks up the new PATH. Then verify:</p>
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>PowerShell (VS Code)</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>ffmpeg -version
+<span class="c"># Should print version info — if it does, you're good to go</span></pre>
+    </div>
+
+    <h3>Option B — Manual install (no package manager needed)</h3>
+    <ol>
+      <li>Go to <strong>https://ffmpeg.org/download.html</strong> → Windows → Windows builds by BtbN</li>
+      <li>Download <code>ffmpeg-master-latest-win64-gpl.zip</code></li>
+      <li>Extract it, rename the folder to <code>ffmpeg</code>, move it to <code>C:\ffmpeg</code></li>
+      <li>Search <strong>"Edit environment variables"</strong> → click <strong>Path</strong> → <strong>New</strong> → type <code>C:\ffmpeg\bin</code></li>
+      <li>Click OK, then close and reopen PowerShell</li>
+    </ol>
+
+    <h3>Option C — Use .wav files instead (avoids ffmpeg entirely)</h3>
+    <p>Whisper can read <code>.wav</code> files without needing ffmpeg. If you generate your TTS audio as <code>.wav</code> instead of <code>.mp3</code>, the error goes away completely. Most TTS tools support both formats — just save as <code>P001_visit.wav</code> etc. and update the file extension check in the tool code if needed.</p>
+
+    <h2>Common errors — quick reference</h2>
     <div class="tbl-wrap">
       <table>
         <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
         <tbody>
           <tr>
+            <td><code>FileNotFoundError: audio_files</code></td>
+            <td>Running the script from inside <code>tools/</code> instead of <code>medical-demo/</code></td>
+            <td>Always run from <code>medical-demo/</code>: <code>cd medical-demo</code> then <code>python tools\transcription_tool.py</code></td>
+          </tr>
+          <tr>
+            <td><code>FileNotFoundError: [WinError 2]</code> during transcription</td>
+            <td>ffmpeg not installed — Whisper needs it to decode .mp3 files</td>
+            <td>Run <code>winget install ffmpeg</code> then close and reopen terminal. Or use .wav files instead.</td>
+          </tr>
+          <tr>
             <td>"No records found" from any agent</td>
-            <td>startup.py was not run, or run in a different terminal</td>
-            <td>Run <code>python startup.py</code> then <code>autogenstudio ui</code> in the <strong>same terminal</strong></td>
+            <td>startup.py not run, or run in a different terminal to AutoGen Studio</td>
+            <td>Run <code>python tools\startup.py</code> then <code>autogenstudio ui</code> in the <strong>same terminal</strong></td>
           </tr>
           <tr>
             <td>Azure 401 or 404 error</td>
-            <td>Wrong endpoint, key, or deployment name</td>
-            <td>Base URL must end with <code>.openai.azure.com/</code> (trailing slash). Deployment name must match Foundry exactly.</td>
+            <td>Wrong endpoint, key, or deployment name in the model JSON</td>
+            <td>Endpoint must end with <code>.openai.azure.com/</code> (trailing slash). Deployment name must match Azure Foundry exactly — it's case-sensitive.</td>
           </tr>
           <tr>
             <td>A specialist agent replies before role is verified</td>
             <td>Selector prompt not routing OrchestratorAgent first</td>
-            <td>Add to selector prompt: "If this is the first message, ALWAYS select OrchestratorAgent."</td>
+            <td>Edit the team node selector prompt — add: "If this is the first message, ALWAYS select OrchestratorAgent."</td>
           </tr>
           <tr>
             <td>PharmacistAgent reveals diagnosis data</td>
@@ -2087,13 +2134,23 @@ $synth.Dispose()
           </tr>
           <tr>
             <td>Whisper is very slow</td>
-            <td>Running large model on CPU</td>
-            <td>Use <code>use_mock=True</code> in startup.py, or switch to <code>whisper.load_model("tiny")</code></td>
+            <td>Running on CPU — base model is slow for long files</td>
+            <td>Switch to <code>whisper.load_model("tiny")</code> for faster results, or use <code>process_mock_files()</code> in class to skip Whisper entirely</td>
           </tr>
           <tr>
-            <td>Tools not found by AutoGen Studio</td>
-            <td>sys.path not pointing to your tools folder</td>
-            <td>Use the full absolute path in <code>sys.path.insert()</code>, not a relative one</td>
+            <td>Tools not found by AutoGen Studio agents</td>
+            <td><code>sys.path</code> not pointing to your tools folder</td>
+            <td>Use the full absolute path in <code>sys.path.insert()</code> — right-click the <code>tools</code> folder in VS Code Explorer and choose Copy Path</td>
+          </tr>
+          <tr>
+            <td>Old agents from a previous AutoGen installation appear</td>
+            <td>AutoGen Studio is using the default database</td>
+            <td>Launch with <code>--database-uri sqlite:///lab_demo.db</code> flag to use an isolated database for this lab</td>
+          </tr>
+          <tr>
+            <td>Team Builder shows blank canvas after clicking + New Team</td>
+            <td>Known Chrome caching issue with some AutoGen Studio versions</td>
+            <td>Do a hard refresh: <kbd>Ctrl+Shift+R</kbd> in Chrome. Or use Microsoft Edge which doesn't have this issue.</td>
           </tr>
         </tbody>
       </table>
@@ -2102,10 +2159,10 @@ $synth.Dispose()
     <h2>Going Further — Try These on Your Own</h2>
     <ul>
       <li>Export the team as Python code (Deployment tab) — inspect what AutoGen Studio generated</li>
-      <li>Swap <strong>SelectorGroupChat</strong> for <strong>RoundRobinGroupChat</strong> and observe the difference</li>
+      <li>Swap <strong>SelectorGroupChat</strong> for <strong>RoundRobinGroupChat</strong> and observe the difference in routing behaviour</li>
       <li>Swap ChromaDB in-memory for a persistent server or <strong>Azure AI Search</strong></li>
       <li>Add a <strong>UserProxyAgent</strong> to enable human-in-the-loop mid-conversation</li>
-      <li>Extend PharmacistAgent with a web search tool to check drug interactions</li>
+      <li>Extend PharmacistAgent with a web search tool to check for drug interactions</li>
       <li>Add real authentication by injecting role + patient_id from a login token instead of asking conversationally</li>
     </ul>
   </section>
