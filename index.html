@@ -1581,11 +1581,34 @@ autogenstudio ui --port 8081 --database-uri "sqlite:///$PWD/../lab_demo.db"
 
     <p>Open <strong>http://localhost:8081</strong> in your browser. We'll start by registering the Python tool functions in AutoGen Studio's Gallery so they become available to attach to agents. Go to <strong>Gallery → Tools → + New Tool</strong> for each tool below — paste the code, name it, and save.</p>
 
+    <div class="callout callout-warn">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">⚠️ Do this before pasting any tool code</div>
+        <div class="callout-text">Every tool below contains the placeholder <code>/path/to/your/medical-demo/tools</code>. You <strong>must replace this with your actual path</strong> before saving each tool — otherwise AutoGen Studio will fail with "No module named 'transcription_tool'" when it tries to run them.<br><br>
+        Run this in PowerShell to get your exact path:</div>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>PowerShell — run this to find your exact path</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>cd C:\Users\gupta037\autogen-demo\medical-demo\tools
+(Get-Item .).FullName
+
+<span class="c"># Expected output example:</span>
+<span class="c"># C:\Users\gupta037\autogen-demo\medical-demo\tools</span>
+<span class="c">#</span>
+<span class="c"># Copy this output — you'll need it in every tool below</span>
+<span class="c"># Important: replace backslashes \ with forward slashes / when pasting into tool code</span>
+<span class="c"># So C:\Users\gupta037\... becomes C:/Users/gupta037/...</span></pre>
+    </div>
+
     <div class="callout callout-tip">
       <div class="callout-stripe"></div>
       <div class="callout-body">
-        <div class="callout-label">📍 Update the path in every tool</div>
-        <div class="callout-text">Each tool needs <code>sys.path.insert(0, '/path/to/your/medical-demo/tools')</code> updated to your actual folder path. In VS Code, right-click the <code>tools</code> folder in the Explorer panel and choose <strong>Copy Path</strong>. On Windows it will look like <code>C:/Users/yourname/medical-demo/tools</code> — use forward slashes even on Windows.</div>
+        <div class="callout-label">💡 VS Code shortcut</div>
+        <div class="callout-text">In VS Code, right-click the <code>tools</code> folder in the Explorer panel → choose <strong>Copy Path</strong>. This gives you the Windows path with backslashes — remember to change them to forward slashes when pasting into the tool code.</div>
       </div>
     </div>
 
@@ -1594,7 +1617,8 @@ autogenstudio ui --port 8081 --database-uri "sqlite:///$PWD/../lab_demo.db"
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>Gallery → Tools → + New Tool</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
 <pre><span class="k">import</span> sys
-sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s">'/path/to/your/medical-demo/tools'</span>)
+<span class="c"># ⚠️ Replace the path below with YOUR actual tools folder path (use forward slashes)</span>
+sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s">'/path/to/your/medical-demo/tools'</span>)  <span class="c"># e.g. 'C:/Users/yourname/autogen-demo/medical-demo/tools'</span>
 <span class="k">from</span> vector_store <span class="k">import</span> query_all
 
 <span class="k">def</span> <span class="f">query_all_records</span>(question: str) -> str:
@@ -1607,7 +1631,8 @@ sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s"
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>Gallery → Tools → + New Tool</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
 <pre><span class="k">import</span> sys
-sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s">'/path/to/your/medical-demo/tools'</span>)
+<span class="c"># ⚠️ Replace the path below with YOUR actual tools folder path (use forward slashes)</span>
+sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s">'/path/to/your/medical-demo/tools'</span>)  <span class="c"># e.g. 'C:/Users/yourname/autogen-demo/medical-demo/tools'</span>
 <span class="k">from</span> vector_store <span class="k">import</span> query_patient
 
 <span class="k">def</span> <span class="f">query_patient_records</span>(question: str, patient_id: str) -> str:
@@ -1620,7 +1645,8 @@ sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s"
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>Gallery → Tools → + New Tool</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
 <pre><span class="k">import</span> sys
-sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s">'/path/to/your/medical-demo/tools'</span>)
+<span class="c"># ⚠️ Replace the path below with YOUR actual tools folder path (use forward slashes)</span>
+sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s">'/path/to/your/medical-demo/tools'</span>)  <span class="c"># e.g. 'C:/Users/yourname/autogen-demo/medical-demo/tools'</span>
 <span class="k">from</span> vector_store <span class="k">import</span> query_prescriptions
 
 <span class="k">def</span> <span class="f">query_prescriptions_only</span>(question: str) -> str:
@@ -1633,7 +1659,8 @@ sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s"
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>Gallery → Tools → + New Tool</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
 <pre><span class="k">import</span> sys, json, whisper, os
-sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s">'/path/to/your/medical-demo/tools'</span>)
+<span class="c"># ⚠️ Replace the path below with YOUR actual tools folder path (use forward slashes)</span>
+sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s">'/path/to/your/medical-demo/tools'</span>)  <span class="c"># e.g. 'C:/Users/yourname/autogen-demo/medical-demo/tools'</span>
 <span class="k">from</span> transcription_tool <span class="k">import</span> extract_sections
 <span class="k">from</span> vector_store <span class="k">import</span> ingest_transcripts, collection
 
@@ -1662,7 +1689,8 @@ sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s"
       <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>Gallery → Tools → + New Tool</div>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
 <pre><span class="k">import</span> sys, json
-sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s">'/path/to/your/medical-demo/tools'</span>)
+<span class="c"># ⚠️ Replace the path below with YOUR actual tools folder path (use forward slashes)</span>
+sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s">'/path/to/your/medical-demo/tools'</span>)  <span class="c"># e.g. 'C:/Users/yourname/autogen-demo/medical-demo/tools'</span>
 <span class="k">from</span> mock_transcripts <span class="k">import</span> MOCK_DATA
 <span class="k">from</span> vector_store <span class="k">import</span> ingest_transcripts
 
