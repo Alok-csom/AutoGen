@@ -545,6 +545,47 @@
   .sidebar-body h3 { margin: 20px 0 8px; }
   .sidebar-body .code-wrap { margin: 8px 0 16px; }
 
+
+  /* ── AutoGen Studio intro cards ──────────────────────────────── */
+  .studio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    margin: 24px 0 32px;
+  }
+  .studio-card {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1.5px solid var(--border);
+  }
+  .studio-card-head {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .studio-icon { font-size: 20px; }
+  .studio-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .studio-card-body {
+    padding: 14px 16px;
+    background: #fff;
+  }
+  .studio-card-body p { font-size: 13px; margin-bottom: 8px; max-width: 100%; }
+  .studio-card-body ul { font-size: 13px; padding-left: 18px; margin-bottom: 8px; }
+  .studio-card-body li { margin-bottom: 4px; }
+  .studio-when {
+    font-size: 11px !important;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted) !important;
+    margin-bottom: 10px !important;
+  }
+
 </style>
 </head>
 <body>
@@ -564,6 +605,7 @@
 
     <div class="nav-section-label">Build It</div>
     <a class="nav-link" href="#step1"><span class="step-num">1</span>Environment Setup</a>
+    <a class="nav-link" href="#studio-intro"><span class="step-num">★</span>AutoGen Studio Intro</a>
     <a class="nav-link" href="#step2"><span class="step-num">2</span>Sample Audio Data</a>
     <a class="nav-link" href="#step3"><span class="step-num">3</span>Transcription Tool</a>
     <a class="nav-link" href="#step4"><span class="step-num">4</span>Vector Store Tool</a>
@@ -573,6 +615,8 @@
     <a class="nav-link" href="#step8"><span class="step-num">8</span>Build the Agents (5)</a>
     <a class="nav-link" href="#step9"><span class="step-num">9</span>Assemble the Team</a>
 
+    <div class="nav-section-label">What's Next</div>
+    <a class="nav-link" href="deployment-guide.html"><span class="step-num">→</span>Deployment Guide</a>
     <div class="nav-section-label">Run the Demo</div>
     <a class="nav-link" href="#step10"><span class="step-num">10</span>Run in Playground</a>
     <a class="nav-link" href="#step11"><span class="step-num">11</span>Troubleshooting</a>
@@ -866,10 +910,151 @@ AZURE_API_VERSION=2024-12-01-preview</pre>
     <div class="callout callout-check">
       <div class="callout-stripe"></div>
       <div class="callout-body">
-        <div class="callout-label">✅ Checkpoint</div>
-        <div class="callout-text">You should see AutoGen Studio with a left sidebar showing: Team Builder, Playground, Gallery, and Deployment tabs. Raise your hand if you're stuck — let's make sure everyone is at this point before moving on.</div>
+        <div class="callout-label">✅ Checkpoint — then close it</div>
+        <div class="callout-text">You should see AutoGen Studio with a left sidebar showing: Team Builder, Playground, Gallery, and Deployment tabs. Once you've confirmed it loads — <strong>stop it for now</strong> with <kbd>Ctrl+C</kbd> in the terminal. We will relaunch it in Step 5 <em>after</em> running the startup script, so that ChromaDB data and AutoGen Studio share the same terminal session. Launching it now and again in Step 5 from different terminals will break the data connection.</div>
       </div>
     </div>
+  </section>
+
+
+  <!-- AutoGen Studio Intro -->
+  <section class="section" id="studio-intro">
+    <div class="step-header">
+      <div class="step-badge" style="background:var(--teal);">★</div>
+      <div><div class="step-title">AutoGen Studio — A Quick Orientation</div><div class="step-time">Read before Step 6 · Reference this during the build</div></div>
+    </div>
+
+    <p>Before we write any tools or build any agents, let's get familiar with the AutoGen Studio interface. When you open <strong>http://localhost:8081</strong> you'll see four main areas in the left sidebar. Here's what each one does and when we'll use it.</p>
+
+    <div class="studio-grid">
+
+      <div class="studio-card">
+        <div class="studio-card-head" style="background:var(--maroon);">
+          <span class="studio-icon">🖼️</span>
+          <span class="studio-card-title">Gallery</span>
+        </div>
+        <div class="studio-card-body">
+          <p class="studio-when">We use this first — Steps 6 &amp; 7</p>
+          <p>The component library. Everything you want to use in your agents lives here first. You register three types of components:</p>
+          <ul>
+            <li><strong>Models</strong> — your Azure AI Foundry GPT-4.1 connection</li>
+            <li><strong>Tools</strong> — your Python retrieval functions</li>
+            <li><strong>Agents</strong> — reusable agent definitions you build</li>
+          </ul>
+          <p>Think of Gallery as your toolbox. You stock it first, then drag components from it into Team Builder.</p>
+        </div>
+      </div>
+
+      <div class="studio-card">
+        <div class="studio-card-head" style="background:var(--teal);">
+          <span class="studio-icon">🔧</span>
+          <span class="studio-card-title">Team Builder</span>
+        </div>
+        <div class="studio-card-body">
+          <p class="studio-when">We use this next — Steps 8 &amp; 9</p>
+          <p>The visual canvas where you assemble your multi-agent team. You:</p>
+          <ul>
+            <li>Create a team and choose its type (we use <strong>SelectorGroupChat</strong>)</li>
+            <li>Drag agents from the Gallery into the team</li>
+            <li>Drag models onto each agent</li>
+            <li>Drag tools onto the agents that need them</li>
+            <li>Set the selector prompt and termination condition</li>
+          </ul>
+          <p>Each component has visible "drop zones" — colored outlines that appear when you drag something compatible over them.</p>
+        </div>
+      </div>
+
+      <div class="studio-card">
+        <div class="studio-card-head" style="background:var(--blue);">
+          <span class="studio-icon">▶️</span>
+          <span class="studio-card-title">Playground</span>
+        </div>
+        <div class="studio-card-body">
+          <p class="studio-when">We use this for the live demo — Step 10</p>
+          <p>The interactive chat interface for testing your team in real time. Features include:</p>
+          <ul>
+            <li>Live message streaming — watch each agent respond as it happens</li>
+            <li>A <strong>message flow graph</strong> showing which agent spoke and in what order</li>
+            <li>Tool call visibility — you can see when an agent calls a retrieval function and what it returned</li>
+            <li><strong>New Session</strong> button to reset between demo scenarios</li>
+          </ul>
+          <p>This is where the whole system comes to life.</p>
+        </div>
+      </div>
+
+      <div class="studio-card">
+        <div class="studio-card-head" style="background:var(--muted);">
+          <span class="studio-icon">📦</span>
+          <span class="studio-card-title">Deployment</span>
+        </div>
+        <div class="studio-card-body">
+          <p class="studio-when">Optional — after the demo</p>
+          <p>Once your prototype works, the Deployment tab lets you:</p>
+          <ul>
+            <li><strong>Export to Python</strong> — download your team as runnable code</li>
+            <li><strong>Export to JSON</strong> — save your team config for version control</li>
+            <li><strong>Serve as an API</strong> — run your team behind a REST endpoint with one command</li>
+          </ul>
+          <p>We cover what to do with this in the <a href="deployment-guide.html" style="color:var(--blue);">Deployment Guide add-on</a>.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <h2>The three team types you'll encounter</h2>
+    <p>When you create a team in Team Builder, AutoGen Studio asks you to pick a team type. These determine how the agents decide who speaks next:</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Team type</th><th>How it picks the next agent</th><th>Best for</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>SelectorGroupChat</strong> <span class="badge badge-gold">what we use</span></td>
+            <td>A separate LLM call reads the conversation and picks the most appropriate agent based on your selector prompt</td>
+            <td>Role-based routing, dynamic workflows where the right agent depends on context</td>
+          </tr>
+          <tr>
+            <td><strong>RoundRobinGroupChat</strong></td>
+            <td>Agents take turns in a fixed order, every time</td>
+            <td>Pipelines where each agent always has something to contribute in sequence</td>
+          </tr>
+          <tr>
+            <td><strong>MagenticOneGroupChat</strong></td>
+            <td>An orchestrator agent plans and assigns tasks to other agents autonomously</td>
+            <td>Complex, open-ended tasks that require planning and multi-step reasoning</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>How drag-and-drop works</h2>
+    <p>AutoGen Studio uses a component model — everything is a typed tile that can only connect to compatible drop zones:</p>
+
+    <div class="flow" style="max-width:600px;">
+      <div class="flow-row">
+        <div class="flow-label">Gallery</div>
+        <div class="flow-box" style="background:var(--gold-l);color:var(--gold-d);">📋 Register Model · Register Tools · Register Agents</div>
+      </div>
+      <div class="flow-arrow">↓ drag into</div>
+      <div class="flow-row">
+        <div class="flow-label">Team Builder</div>
+        <div class="flow-box" style="background:var(--teal-l);color:var(--teal);">🔧 Drop agents into team · Drop model onto each agent · Drop tools onto agents that need them</div>
+      </div>
+      <div class="flow-arrow">↓ test in</div>
+      <div class="flow-row">
+        <div class="flow-label">Playground</div>
+        <div class="flow-box" style="background:var(--blue-l);color:var(--blue);">▶️ Select team → chat → watch agents respond in real time</div>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">💡 AutoGen Studio vs. the AutoGen framework</div>
+        <div class="callout-text">AutoGen Studio is a visual prototyping tool built <em>on top of</em> the AutoGen Python framework. Everything you build here can be exported as Python code (via the Deployment tab) and run independently. The Studio is not meant for production — it's for building and testing quickly. The <a href="deployment-guide.html" style="color:var(--blue);">Deployment Guide</a> covers what comes after.</div>
+      </div>
+    </div>
+
   </section>
 
   <!-- Step 2 -->
@@ -1760,9 +1945,24 @@ Rules:
     </ul>
   </section>
 
-  <footer>
-    <div><strong>MSBA 6155</strong> — Generative AI in Business &nbsp;·&nbsp; Carlson School of Management · University of Minnesota</div>
-    <div>AutoGen Studio v0.4 &nbsp;·&nbsp; Azure AI Foundry &nbsp;·&nbsp; GPT-4.1 &nbsp;·&nbsp; <a href="deployment-guide.html" style="color:var(--gold);">→ Deployment Guide</a></div>
+  
+  <!-- Next Steps -->
+  <section class="section" id="next">
+    <div class="step-header">
+      <div class="step-badge">→</div>
+      <div><div class="step-title">Ready to Go Further?</div><div class="step-time">Post-lab module</div></div>
+    </div>
+    <p>Now that you have a working prototype, the next question is: how would you turn this into a real deployed application? The add-on module below covers the complete path from AutoGen Studio export to a production Azure deployment — with real authentication, persistent storage, a REST API, Docker, and Azure Container Apps.</p>
+    <a href="deployment-guide.html" style="display:inline-flex;align-items:center;gap:12px;margin-top:8px;padding:16px 28px;background:var(--maroon);color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px;transition:background 0.15s;" onmouseover="this.style.background='#5a0012'" onmouseout="this.style.background='var(--maroon)'">
+      <span style="font-size:20px;">🚀</span>
+      <span>From Prototype to Production — Deployment Guide →</span>
+    </a>
+    <p style="margin-top:16px;font-size:14px;color:var(--muted);">Covers: exporting from AutoGen Studio · Azure AD authentication · persistent ChromaDB / Azure AI Search · FastAPI wrapper · Docker · Azure Container Apps · Managed Identity</p>
+  </section>
+
+<footer>
+    <div><strong>MSBA 6155</strong> — Generative AI in Business &nbsp;·&nbsp; Carlson School of Management, University of Minnesota</div>
+    <div>AutoGen Studio v0.4 &nbsp;·&nbsp; Azure AI Foundry &nbsp;·&nbsp; GPT-4.1</div>
   </footer>
 
 </main>
