@@ -1046,30 +1046,47 @@ INFO:     Uvicorn running on http://0.0.0.0:8081 (Press CTRL+C to quit)</span></
 
     </div>
 
-    <h2>The three team types you'll encounter</h2>
-    <p>When you create a team in Team Builder, AutoGen Studio asks you to pick a team type. These determine how the agents decide who speaks next:</p>
+    <h2>The team types available in AutoGen Studio</h2>
+    <p>When you click <strong>+ New Team → From Gallery</strong>, AutoGen Studio shows four team templates. These determine how agents decide who speaks next:</p>
 
     <div class="tbl-wrap">
       <table>
-        <thead><tr><th>Team type</th><th>How it picks the next agent</th><th>Best for</th></tr></thead>
+        <thead><tr><th>Template in Gallery</th><th>Underlying type</th><th>How it picks the next agent</th><th>Best for</th></tr></thead>
         <tbody>
           <tr>
-            <td><strong>SelectorGroupChat</strong> <span class="badge badge-gold">what we use</span></td>
-            <td>A separate LLM call reads the conversation and picks the most appropriate agent based on your selector prompt</td>
-            <td>Role-based routing, dynamic workflows where the right agent depends on context</td>
-          </tr>
-          <tr>
-            <td><strong>RoundRobinGroupChat</strong></td>
+            <td><strong>RoundRobin Team</strong></td>
+            <td>RoundRobinGroupChat</td>
             <td>Agents take turns in a fixed order, every time</td>
             <td>Pipelines where each agent always has something to contribute in sequence</td>
           </tr>
           <tr>
-            <td><strong>MagenticOneGroupChat</strong></td>
-            <td>An orchestrator agent plans and assigns tasks to other agents autonomously</td>
-            <td>Complex, open-ended tasks that require planning and multi-step reasoning</td>
+            <td><strong>Selector Team</strong> <span class="badge badge-gold">what we use</span></td>
+            <td>SelectorGroupChat</td>
+            <td>A separate LLM call reads the conversation and picks the most appropriate agent based on agent descriptions and conversation history</td>
+            <td>Role-based routing, dynamic workflows where the right agent depends on context</td>
+          </tr>
+          <tr>
+            <td><strong>Web Agent Team</strong></td>
+            <td>SelectorGroupChat</td>
+            <td>Same as Selector — pre-configured with a WebSurfer agent for browsing the web</td>
+            <td>Web research tasks — search, summarize, extract information from live pages</td>
+          </tr>
+          <tr>
+            <td><strong>Deep Research Team</strong></td>
+            <td>SelectorGroupChat</td>
+            <td>Same as Selector — pre-configured with multiple research and writing agents</td>
+            <td>Structured research reports requiring planning, search, and synthesis</td>
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">💡 Team type cannot be changed after creation</div>
+        <div class="callout-text">The team type is set when you choose a template and cannot be changed afterwards without editing JSON. Always start from the right template. For this lab we use <strong>Selector Team</strong> — it gives us a SelectorGroupChat with the default <code>{roles}</code> / <code>{participants}</code> / <code>{history}</code> selector prompt already in place.</div>
+      </div>
     </div>
 
     <h2>How drag-and-drop works</h2>
@@ -1715,41 +1732,56 @@ MedicalAgent: Goodbye! What is your role? (doctor / patient / pharmacist / lab)<
       <div><div class="step-title">Add Azure Model to Gallery</div><div class="step-time">⏱ ~5 minutes</div></div>
     </div>
 
-    <p>Before building agents we register our Azure model once in the Gallery. It becomes a draggable tile you attach to MedicalAgent.</p>
+    <p>Before building agents we register our Azure model in the Gallery. The fastest and most reliable way is to <strong>duplicate the existing AzureOpenAI template</strong> already in the Gallery — the default "+ New Model" button opens an OpenAI-shaped form that doesn't show Azure fields at all.</p>
+
+    <div class="callout callout-key">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">🔑 No JSON editing required</div>
+        <div class="callout-text">By duplicating the existing AzureOpenAI model card you get a form with the correct Azure fields already visible — Endpoint, Deployment, API Version. You just fill in your own values.</div>
+      </div>
+    </div>
 
     <ol>
-      <li>Click <strong>Gallery</strong> → <strong>Models</strong> → <strong>+ New Model</strong></li>
-      <li>Click <strong>JSON Editor</strong> in the top right</li>
-      <li>Replace the entire JSON with the config below</li>
-      <li>Click <strong>Test</strong> — green success confirms connection</li>
-      <li>Click <strong>Save</strong></li>
+      <li>In the left sidebar click <strong>Gallery</strong> → click the <strong>Models</strong> tab</li>
+      <li>You will see an existing card named <strong>AzureOpenAI GPT-4o-mini</strong> — hover over it</li>
+      <li>Two small icons appear in the top right of the card — click the <strong>duplicate (copy) icon</strong></li>
+      <li>Click on the new duplicated card to open the <strong>Edit Component</strong> panel</li>
+      <li>Scroll to the <strong>Azure Configuration</strong> section and fill in each field:</li>
     </ol>
 
-    <div class="code-wrap">
-      <div class="code-label"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>Gallery → Models → + New Model → JSON Editor</div>
-      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-<pre>{
-  <span class="s">"provider"</span>: <span class="s">"autogen_ext.models.openai.AzureOpenAIChatCompletionClient"</span>,
-  <span class="s">"component_type"</span>: <span class="s">"model"</span>,
-  <span class="s">"version"</span>: <span class="n">1</span>,
-  <span class="s">"component_version"</span>: <span class="n">1</span>,
-  <span class="s">"description"</span>: <span class="s">"GPT-4 Azure OpenAI model client."</span>,
-  <span class="s">"label"</span>: <span class="s">"AzureOpenAI GPT-4"</span>,
-  <span class="s">"config"</span>: {
-    <span class="s">"model"</span>: <span class="s">"gpt-4"</span>,
-    <span class="s">"api_key"</span>: <span class="s">"your-azure-key-here"</span>,
-    <span class="s">"azure_endpoint"</span>: <span class="s">"https://your-resource.openai.azure.com/"</span>,
-    <span class="s">"azure_deployment"</span>: <span class="s">"gpt-4"</span>,
-    <span class="s">"api_version"</span>: <span class="s">"2024-06-01"</span>
-  }
-}</pre>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Field in the form</th><th>What to enter</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Model</strong></td><td>Your deployment's model name — e.g. <code>gpt-4</code></td></tr>
+          <tr><td><strong>API Key</strong></td><td>Azure AI Foundry → Project Settings → Keys and Endpoint → Key 1</td></tr>
+          <tr><td><strong>Azure Endpoint</strong></td><td>Azure AI Foundry → Project Overview → Azure AI Foundry endpoint</td></tr>
+          <tr><td><strong>Azure Deployment</strong></td><td>Azure AI Foundry → Deployments → your deployment name (e.g. <code>gpt-4</code>)</td></tr>
+          <tr><td><strong>API Version</strong></td><td><code>2024-06-01</code></td></tr>
+        </tbody>
+      </table>
     </div>
+
+    <div class="callout callout-warn">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">⚠️ Endpoint format — trailing slash only</div>
+        <div class="callout-text">Your Azure Endpoint must end exactly in <code>openai.azure.com/</code> — nothing after it. If you copy the URL from Azure Foundry's "View Code" page it often includes extra path segments like <code>/openai/v1</code>. Delete everything after <code>openai.azure.com/</code> before saving or the connection will fail with a 404.</div>
+      </div>
+    </div>
+
+    <ol start="6">
+      <li>Scroll back up to the <strong>Name</strong> field → rename to <code>AzureOpenAI GPT-4</code></li>
+      <li>Click <strong>Test</strong> at the top of the panel — you should see a green success response</li>
+      <li>Click <strong>Save Changes</strong></li>
+    </ol>
 
     <div class="callout callout-check">
       <div class="callout-stripe"></div>
       <div class="callout-body">
         <div class="callout-label">✅ Checkpoint</div>
-        <div class="callout-text"><strong>AzureOpenAI GPT-4</strong> appears in the component library as a draggable tile. Green Test result confirms your Azure credentials work.</div>
+        <div class="callout-text"><strong>AzureOpenAI GPT-4</strong> now appears as its own card in the Gallery's Models tab and can be dragged onto any agent when building teams in Team Builder.</div>
       </div>
     </div>
   </section>
@@ -1923,14 +1955,27 @@ sys.path.<span class="f">insert</span>(<span class="n">0</span>, <span class="s"
       </div>
     </div>
 
-    <h2>Stage 1 — Create the team</h2>
+    <h2>Stage 1 — Create the team from Gallery</h2>
+    <p>The PDF shows the correct workflow — use <strong>From Gallery</strong> to start from an existing template rather than a blank canvas. This gives you a team that already has the correct type set.</p>
     <ol>
-      <li>Go to <strong>Team Builder → From Gallery → Selector Team → Use</strong></li>
-      <li>Click the team node edit icon → rename to <strong>MedicalRecordsTeam</strong></li>
-      <li>Delete both placeholder agents</li>
+      <li>In Team Builder click <strong>+ New Team</strong> → click the <strong>From Gallery</strong> tab</li>
+      <li>You will see team templates: RoundRobin Team, Selector Team, Web Agent Team, Deep Research Team</li>
+      <li>Hover over <strong>Selector Team</strong> → click <strong>Use as template</strong></li>
+      <li>The canvas opens with the Selector Team pre-configured — delete the placeholder agents</li>
+      <li>Click the team node edit icon → rename to <code>MedicalRecordsTeam</code></li>
       <li>Set <strong>Max Turns</strong> to <code>20</code></li>
-      <li>Set <code>allow_repeated_speaker</code> to <code>false</code> in JSON Editor</li>
+      <li>Open JSON Editor → find <code>"allow_repeated_speaker"</code> → set to <code>false</code></li>
+      <li>Check for a <code>workbench</code> block in the team node JSON and delete it if present</li>
+      <li>Save</li>
     </ol>
+
+    <div class="callout callout-tip">
+      <div class="callout-stripe"></div>
+      <div class="callout-body">
+        <div class="callout-label">💡 Why Selector Team template?</div>
+        <div class="callout-text">The team type (RoundRobin vs Selector) can only be set at creation time — you cannot change it afterwards without editing JSON. Starting from the Selector Team template ensures the correct team type is already set. The default selector prompt using <code>{roles}</code>, <code>{participants}</code>, and <code>{history}</code> is also already in place — leave it as-is.</div>
+      </div>
+    </div>
 
     <h2>Stage 2 — Add User agent</h2>
     <ol>
